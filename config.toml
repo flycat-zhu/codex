@@ -1,0 +1,32 @@
+# Codex CLI 项目配置文件说明
+# 
+# 重要：Codex 只会加载 .codex/config.toml，不会加载项目根目录的 config.toml
+# 实际配置文件位置：.codex/config.toml
+# 
+# 配置加载优先级：
+# 1. ~/.codex/config.toml (用户级配置)
+# 2. .codex/config.toml (项目级配置，会覆盖用户级配置)
+# 3. 命令行参数 (最高优先级)
+
+# PaddleOCR MCP Server 配置
+[mcp_servers.paddleocr]
+command = "paddleocr_mcp"
+args = ["--pipeline", "OCR", "--ppocr_source", "local"]
+env = {}
+
+# ========== 火山引擎配置 ==========
+[model_providers.volcengine]
+name = "火山引擎 Doubao"
+base_url = "https://ark.cn-beijing.volces.com/api/v3"
+env_key = "VOLC_API_KEY"
+wire_api = "chat"
+requires_openai_auth = false
+
+# 设置默认使用火山引擎
+model_provider = "volcengine"
+model = "doubao-pro-32k"
+
+# ========== Shell 环境策略（确保 Python 虚拟环境可用）==========
+[shell_environment_policy]
+inherit = "all"  # 继承所有环境变量（包括 PATH, VIRTUAL_ENV）
+ignore_default_excludes = true  # 保留包含 KEY 的环境变量

@@ -1,0 +1,148 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Build artifacts
+target/
+dist/
+node_modules/
+*.tgz
+*.tar.gz
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+.tmp/
+
+# Test files and coverage (but keep test support files needed for compilation)
+**/tests/fixtures/
+**/*_test.rs
+**/*_spec.rs
+coverage/
+*.profraw
+
+# CI/CD
+.github/
+.devcontainer/
+
+# Package managers
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Documentation (optional - remove if you want docs in container)
+docs/
+*.md
+README.md
+CHANGELOG.md
+LICENSE
+NOTICE
+AGENTS.md
+
+# Configuration files (keep essential ones)
+.env
+.env.*
+!.env.example
+
+# Nix
+flake.nix
+flake.lock
+default.nix
+
+# Just
+justfile
+
+# Cliff (changelog generator)
+cliff.toml
+
+# Rust specific (but keep source files)
+**/.cargo/
+**/Cargo.lock.orig
+**/*.rs.bk
+
+# TypeScript CLI (legacy)
+codex-cli/node_modules/
+codex-cli/dist/
+codex-cli/*.tgz
+
+# Shell tool MCP
+shell-tool-mcp/node_modules/
+shell-tool-mcp/dist/
+
+# SDK
+sdk/typescript/node_modules/
+sdk/typescript/dist/
+
+# Scripts (keep essential ones)
+scripts/
+!scripts/init_firewall.sh
+
+# Patches
+patches/
+
+# Third party
+third_party/
+
+# Windows specific
+*.exe
+*.dll
+
+# macOS specific
+.DS_Store
+*.dmg
+
+# Linux specific
+*.so
+*.a
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Editor swap files
+*.swp
+*.swo
+*.tmp
+
+# Cache directories
+.cache/
+**/.cache/
+
+# Snapshots (test artifacts, but keep if needed for compilation)
+# **/snapshots/
+
+# Frames - IMPORTANT: Do NOT exclude frames/ directory as it's needed at compile time
+# **/frames/
+
+# PNPM
+.pnpm-debug.log*
+.pnpm/
+
+# Yarn
+.yarn/
+.yarnrc.yml
+
+# NPM
+npm-debug.log*
+.npm/
+
+# Local development
+.local/
+local/
+
+# IMPORTANT NOTES:
+# - Do NOT exclude files containing "spec" in their name (like spec.rs) - they are source code
+# - Do NOT exclude frames/ directories - they are needed for include_str! macros
+# - Do NOT exclude test support files in tests/common/ - they may be needed for workspace
