@@ -1,0 +1,15 @@
+# Python requirements for Codex CLI
+
+# 核心库
+PyPDF2==3.0.1
+pandas==2.2.0
+matplotlib==3.7.0
+openpyxl==3.1.0
+
+# 文档处理
+python-docx==1.2.0
+reportlab==4.4.7
+pypandoc==1.13  # Pandoc Python 接口（需要系统安装 pandoc）
+
+# 服务器依赖
+requests==2.31.0
