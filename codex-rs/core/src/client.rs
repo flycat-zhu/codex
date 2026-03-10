@@ -537,7 +537,10 @@ impl ModelClientSession {
         } else {
             None
         };
-        let include = if reasoning.is_some() {
+        // Only request encrypted reasoning content for OpenAI providers.
+        // Third-party providers (e.g. Doubao/volcengine) support the `reasoning`
+        // field itself but reject `include: ["reasoning.encrypted_content"]`.
+        let include = if reasoning.is_some() && self.client.state.provider.is_openai() {
             vec!["reasoning.encrypted_content".to_string()]
         } else {
             Vec::new()
@@ -557,7 +560,7 @@ impl ModelClientSession {
             None
         };
         let text = create_text_param_for_request(verbosity, &prompt.output_schema);
-        let prompt_cache_key = Some(self.client.state.conversation_id.to_string());
+        let prompt_cache_key = None;
         let request = ResponsesApiRequest {
             model: model_info.slug.clone(),
             instructions: instructions.clone(),

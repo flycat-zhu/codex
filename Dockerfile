@@ -6,7 +6,9 @@
             # 移除：CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse（与 git 镜像冲突）
             # Rustup 工具链加速（中科大源）
             RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static \
-            RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
+            RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup \
+            # 增加 rustup 超时和重试
+            RUSTUP_IO_THREADS=1
         
         RUN mkdir -p /root/.cargo && \
             cat <<EOF > /root/.cargo/config
@@ -27,7 +29,7 @@ EOF
             echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
             echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
             apt-get update && apt-get install -y --no-install-recommends \
-                ca-certificates git pkg-config build-essential curl libssl-dev zlib1g-dev && \
+                ca-certificates git pkg-config build-essential curl libssl-dev zlib1g-dev libcap-dev && \
             rm -rf /var/lib/apt/lists/*
     
         WORKDIR /src
@@ -44,7 +46,9 @@ EOF
             CARGO_NET_RETRY=5 \
             CARGO_HTTP_TIMEOUT=300
         # 使用 debug 模式以避免内存不足（release 模式需要更多内存）
-        RUN cargo build --bin codex
+        # 先更新 rustup（增加超时和重试），然后构建
+        RUN rustup set auto-self-update disable && \
+        cargo build -p codex-cli --bin codex
     
         # ---------- Stage 2: runtime ----------
         FROM debian:bookworm-slim

@@ -70,7 +70,13 @@ pub enum ResponseEvent {
         /// Whether the client can append more items to a long-running websocket response.
         can_append: bool,
     },
-    OutputTextDelta(String),
+    OutputTextDelta {
+        delta: String,
+        /// Item id provided by the server (e.g. Doubao sets this at the top
+        /// level of the SSE event so we can synthesise an active item when
+        /// `output_item.added` was missed or unparseable).
+        item_id: Option<String>,
+    },
     ReasoningSummaryDelta {
         delta: String,
         summary_index: i64,
@@ -81,6 +87,10 @@ pub enum ResponseEvent {
     },
     ReasoningSummaryPartAdded {
         summary_index: i64,
+        /// Item id provided by the server (e.g. Doubao sets this at the top
+        /// level of the SSE event so we can synthesise an active item when
+        /// `output_item.added` was missed or unparseable).
+        item_id: Option<String>,
     },
     RateLimits(RateLimitSnapshot),
     ModelsEtag(String),
@@ -153,6 +163,7 @@ pub struct ResponsesApiRequest {
     pub reasoning: Option<Reasoning>,
     pub store: bool,
     pub stream: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub include: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt_cache_key: Option<String>,
@@ -195,6 +206,7 @@ pub struct ResponseCreateWsRequest {
     pub reasoning: Option<Reasoning>,
     pub store: bool,
     pub stream: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub include: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt_cache_key: Option<String>,

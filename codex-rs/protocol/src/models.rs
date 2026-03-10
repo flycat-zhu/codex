@@ -215,6 +215,10 @@ pub enum ResponseItem {
         #[serde(default, skip_serializing)]
         #[ts(skip)]
         id: String,
+        // `default` is required because third-party providers (e.g. Doubao) omit `summary`
+        // in the `output_item.added` streaming event when the item is still in progress,
+        // only populating it in the `output_item.done` event.
+        #[serde(default)]
         summary: Vec<ReasoningItemReasoningSummary>,
         #[serde(default, skip_serializing_if = "should_serialize_reasoning_content")]
         #[ts(optional)]

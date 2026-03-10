@@ -28,7 +28,7 @@ temp/
 # Test files and coverage (but keep test support files needed for compilation)
 **/tests/fixtures/
 **/*_test.rs
-**/*_spec.rs
+**/tests/**/*_spec.rs
 coverage/
 *.profraw
 

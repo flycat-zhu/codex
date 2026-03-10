@@ -1463,6 +1463,14 @@ pub fn create_tools_json_for_responses_api(
     let mut tools_json = Vec::new();
 
     for tool in tools {
+        // Filter out Freeform tools as they are not supported by some LLMs
+        if matches!(tool, ToolSpec::Freeform(_)) {
+            continue;
+        }
+        // Filter out WebSearch tools as they are not supported by some LLMs
+        if matches!(tool, ToolSpec::WebSearch { .. }) {
+            continue;
+        }
         let json = serde_json::to_value(tool)?;
         tools_json.push(json);
     }

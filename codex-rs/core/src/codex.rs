@@ -6351,7 +6351,24 @@ async fn try_run_sampling_request(
                     last_agent_message,
                 });
             }
-            ResponseEvent::OutputTextDelta(delta) => {
+            ResponseEvent::OutputTextDelta { delta, item_id: event_item_id } => {
+                // Some providers (e.g. Doubao) send `output_text.delta` before
+                // `output_item.added`, so `active_item` may be `None`.
+                // When we have an `item_id` from the event we can synthesise a
+                // placeholder AgentMessage item so the stream continues.
+                if active_item.is_none() {
+                    let id = event_item_id
+                        .as_deref()
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or("synthetic-agent-message");
+                    let synthetic = TurnItem::AgentMessage(codex_protocol::items::AgentMessageItem {
+                        id: id.to_string(),
+                        content: Vec::new(),
+                        phase: None,
+                    });
+                    sess.emit_turn_item_started(&turn_context, &synthetic).await;
+                    active_item = Some(synthetic);
+                }
                 // In review child threads, suppress assistant text deltas; the
                 // UI will show a selection popup from the final ReviewOutput.
                 if let Some(active) = active_item.as_ref() {
@@ -6377,7 +6394,7 @@ async fn try_run_sampling_request(
                             .await;
                     }
                 } else {
-                    error_or_panic("OutputTextDelta without active item".to_string());
+                    warn!("OutputTextDelta without active item; skipping");
                 }
             }
             ResponseEvent::ReasoningSummaryDelta {
@@ -6395,10 +6412,32 @@ async fn try_run_sampling_request(
                     sess.send_event(&turn_context, EventMsg::ReasoningContentDelta(event))
                         .await;
                 } else {
-                    error_or_panic("ReasoningSummaryDelta without active item".to_string());
+                    warn!("ReasoningSummaryDelta without active item; skipping");
                 }
             }
-            ResponseEvent::ReasoningSummaryPartAdded { summary_index } => {
+            ResponseEvent::ReasoningSummaryPartAdded {
+                summary_index,
+                item_id: event_item_id,
+            } => {
+                // Some providers (e.g. Doubao) send `reasoning_summary_part.added`
+                // before or without a matching `output_item.added`, so `active_item`
+                // may be `None`.  When we have an `item_id` from the event we can
+                // synthesise a placeholder reasoning item so the stream continues.
+                if active_item.is_none() {
+                    if let Some(id) = event_item_id.as_deref().filter(|s| !s.is_empty()) {
+                        let synthetic = TurnItem::Reasoning(
+                            codex_protocol::items::ReasoningItem {
+                                id: id.to_string(),
+                                summary_text: Vec::new(),
+                                raw_content: Vec::new(),
+                            },
+                        );
+                        sess.emit_turn_item_started(&turn_context, &synthetic).await;
+                        active_item = Some(synthetic);
+                    } else {
+                        warn!("ReasoningSummaryPartAdded without active item and no item_id; skipping");
+                    }
+                }
                 if let Some(active) = active_item.as_ref() {
                     let event =
                         EventMsg::AgentReasoningSectionBreak(AgentReasoningSectionBreakEvent {
@@ -6406,8 +6445,6 @@ async fn try_run_sampling_request(
                             summary_index,
                         });
                     sess.send_event(&turn_context, event).await;
-                } else {
-                    error_or_panic("ReasoningSummaryPartAdded without active item".to_string());
                 }
             }
             ResponseEvent::ReasoningContentDelta {
@@ -6425,7 +6462,7 @@ async fn try_run_sampling_request(
                     sess.send_event(&turn_context, EventMsg::ReasoningRawContentDelta(event))
                         .await;
                 } else {
-                    error_or_panic("ReasoningRawContentDelta without active item".to_string());
+                    warn!("ReasoningRawContentDelta without active item; skipping");
                 }
             }
         }

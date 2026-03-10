@@ -173,6 +173,9 @@ pub struct ResponsesStreamEvent {
     delta: Option<String>,
     summary_index: Option<i64>,
     content_index: Option<i64>,
+    /// Present in reasoning-related events from providers such as Doubao that
+    /// include the item id at the top level (e.g. `response.reasoning_summary_part.added`).
+    item_id: Option<String>,
 }
 
 impl ResponsesStreamEvent {
@@ -250,7 +253,10 @@ pub fn process_responses_event(
         }
         "response.output_text.delta" => {
             if let Some(delta) = event.delta {
-                return Ok(Some(ResponseEvent::OutputTextDelta(delta)));
+                return Ok(Some(ResponseEvent::OutputTextDelta {
+                    delta,
+                    item_id: event.item_id.clone(),
+                }));
             }
         }
         "response.reasoning_summary_text.delta" => {
@@ -372,6 +378,7 @@ pub fn process_responses_event(
             if let Some(summary_index) = event.summary_index {
                 return Ok(Some(ResponseEvent::ReasoningSummaryPartAdded {
                     summary_index,
+                    item_id: event.item_id.clone(),
                 }));
             }
         }
