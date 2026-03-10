@@ -1,20 +1,10 @@
-# Codex CLI 项目配置文件说明
-# 
-# 重要：Codex 只会加载 .codex/config.toml，不会加载项目根目录的 config.toml
-# 实际配置文件位置：.codex/config.toml
-# 
-# 配置加载优先级：
-# 1. ~/.codex/config.toml (用户级配置)
-# 2. .codex/config.toml (项目级配置，会覆盖用户级配置)
-# 3. 命令行参数 (最高优先级)
+# Codex 配置文件
+# 顶层配置（必须在所有 [section] 之前）
+model_provider = "volcengine"
+model = "doubao-seed-2-0-pro-260215"
+web_search = "disabled"
 
-# PaddleOCR MCP Server 配置
-[mcp_servers.paddleocr]
-command = "paddleocr_mcp"
-args = ["--pipeline", "OCR", "--ppocr_source", "local"]
-env = {}
-
-# ========== 火山引擎配置 ==========
+# ========== 火山引擎 Provider 定义 ==========
 [model_providers.volcengine]
 name = "火山引擎 Doubao"
 base_url = "https://ark.cn-beijing.volces.com/api/v3"
@@ -22,15 +12,13 @@ env_key = "VOLC_API_KEY"
 wire_api = "responses"
 requires_openai_auth = false
 
-# 设置默认使用火山引擎
-model_provider = "volcengine"
-model = "doubao-seed-2-0-pro-260215"
+# ========== PaddleOCR MCP Server ==========
+[mcp_servers.paddleocr]
+command = "paddleocr_mcp"
+args = ["--pipeline", "OCR", "--ppocr_source", "local"]
+env = {}
 
-# ========== Shell 环境策略（确保 Python 虚拟环境可用）==========
+# ========== Shell 环境策略 ==========
 [shell_environment_policy]
-inherit = "all"  # 继承所有环境变量（包括 PATH, VIRTUAL_ENV）
-ignore_default_excludes = true  # 保留包含 KEY 的环境变量
-
-# ========== Web Search 配置 ==========
-# 禁用 web_search 工具（避免发送 external_web_access 工具给不支持的大模型）
-web_search = "disabled"
+inherit = "all"
+ignore_default_excludes = true
