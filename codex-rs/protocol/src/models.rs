@@ -225,6 +225,10 @@ pub enum ResponseItem {
         content: Option<Vec<ReasoningItemContent>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         encrypted_content: Option<String>,
+        // Doubao requires `status` on reasoning items in subsequent input turns.
+        // OpenAI also emits status="completed" on reasoning output_item.done.
+        #[serde(default = "default_status_completed")]
+        status: String,
     },
     LocalShellCall {
         /// Legacy id field retained for compatibility with older payloads.
