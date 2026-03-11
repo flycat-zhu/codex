@@ -61,7 +61,17 @@
 - **文件**：`codex-rs/core/src/codex.rs` 第 6401-6435 行；`codex-rs/codex-api/src/common.rs`（添加 `item_id` 字段）；`codex-rs/codex-api/src/sse/responses.rs`（解析 `item_id`）
 - **状态**：✅ 已修复（commit `ad162f637`）
 
-### 问题 3：ModelInfo 中豆包模型配置缺失（待验证）
+### 问题 3：Reasoning item 中 `content`/`encrypted_content` 字段导致 BadRequest
+- **错误信息**：`unknown field "content"` in `input` parameter
+- **根因**：`ResponseItem::Reasoning` 变体的 `content` 字段（`skip_serializing_if = should_serialize_reasoning_content`）在值为 `None` 时，该函数返回 `false`（不跳过），导致 serde 将其序列化为 `"content": null` 发送给豆包。豆包的 reasoning item 不接受 `content` 字段，报 `unknown field` 错误。同样 `encrypted_content: Option<String>` 也缺少 `skip_serializing_if` 保护。
+- **修复方案**：
+  1. `should_serialize_reasoning_content`：`None` 分支从 `false` 改为 `true`（None 时跳过序列化）
+  2. `encrypted_content` 字段添加 `#[serde(skip_serializing_if = "Option::is_none")]`
+- **影响评估**：**不影响任何 Codex 功能**。`content` 和 `encrypted_content` 有值时依然正常序列化发送，仅阻止 `null` 值出现在请求 JSON 中。OpenAI 侧行为不变（原本发 null 被忽略，现在不发，语义等价）。
+- **文件**：`codex-rs/protocol/src/models.rs`（`should_serialize_reasoning_content` 函数，约第 628 行；`Reasoning` variant 第 226 行）
+- **状态**：✅ 已修复（commit `db8b89dbc`）
+
+### 问题 4：ModelInfo 中豆包模型配置缺失（待验证）
 - **根因**：`doubao-seed-2-0-pro-260215` 是推理模型，需要正确的 ModelInfo（`supports_reasoning_summaries=true`，`parallel_tool_calls` 等）
 - **修复方案**：在用户 `config.toml` 的 `[model_providers.volcengine]` 下，或通过 Codex 的 models.json 注入正确的 ModelInfo
 - **状态**：🔍 待验证（取决于运行时 models.json 返回值）
@@ -73,7 +83,9 @@
 | 时间 | 操作 | 镜像 tag | 结果 |
 |------|-----|---------|-----|
 | 2026-03-10 之前 | include 字段修复 + 首次构建 | `3.1` | ✅ 编译成功，已构建 |
-| 2026-03-10 | ReasoningSummaryPartAdded 修复，编译中 | `4.0`（目标）| 🔧 进行中 |
+| 2026-03-10 09:x | OutputTextDelta without active item 修复 | `4.1` | ✅ 编译成功 |
+| 2026-03-10 19:43 | config.toml TOML 顺序修复 + 重建 | `4.2` | ✅ 镜像构建完成 |
+| 2026-03-11 10:xx | Reasoning content/encrypted_content null 字段修复 | `4.3`（构建中）| 🔧 进行中 |
 
 ---
 
