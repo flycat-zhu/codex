@@ -71,7 +71,23 @@
 - **文件**：`codex-rs/protocol/src/models.rs`（`should_serialize_reasoning_content` 函数，约第 628 行；`Reasoning` variant 第 226 行）
 - **状态**：✅ 已修复（commit `db8b89dbc`）
 
-### 问题 4：ModelInfo 中豆包模型配置缺失（待验证）
+### 问题 4：第二轮对话 `FunctionCall` item 缺少 `status` 字段导致 MissingParameter
+- **错误信息**：`missing input.status parameter`（第二轮及后续对话）
+- **根因**：`ResponseItem::FunctionCall` 结构体没有 `status` 字段。OpenAI 在 `output_item.done` 事件中会带上 `status: "completed"`，但 Codex 反序列化时直接丢弃了该字段（结构体无对应字段）。第二轮对话把第一轮的 `FunctionCall` 历史放入 `input` 时，豆包要求 `status` 必须存在，于是报 `MissingParameter`。
+- **修复方案**：给 `FunctionCall` 添加 `status: String` 字段，使用 `#[serde(default = "default_status_completed")]` 保证反序列化缺失时默认为 `"completed"`，从而在下一轮 input 中正确携带该字段。
+- **影响评估**：**不影响任何 Codex 功能**。OpenAI 本就会在此字段发送 `"completed"`，补全后行为与 OpenAI 侧完全一致。
+- **文件**：`codex-rs/protocol/src/models.rs`（`FunctionCall` variant；`default_status_completed` 函数）
+- **状态**：✅ 已修复（commit `b3113e84e`）
+
+### 问题 5：第二轮对话 `Reasoning` item 缺少 `status` 字段导致 MissingParameter
+- **错误信息**：`missing input.status parameter`（第二轮及后续对话，与问题 4 相同表现）
+- **根因**：`ResponseItem::Reasoning` 结构体同样缺少 `status` 字段。当模型在第一轮返回推理 item（reasoning），第二轮把它带入 input 历史时，豆包要求该 item 必须携带 `status`。
+- **修复方案**：给 `Reasoning` 添加 `status: String` 字段，`#[serde(default = "default_status_completed")]`，默认 `"completed"`。
+- **影响评估**：与问题 4 修复相同，不影响 Codex 功能，与 OpenAI 行为一致。
+- **文件**：`codex-rs/protocol/src/models.rs`（`Reasoning` variant）
+- **状态**：✅ 已修复（commit `b907ae7ab`），镜像 `4.5` 构建中
+
+### 问题 6：ModelInfo 中豆包模型配置缺失（待验证）
 - **根因**：`doubao-seed-2-0-pro-260215` 是推理模型，需要正确的 ModelInfo（`supports_reasoning_summaries=true`，`parallel_tool_calls` 等）
 - **修复方案**：在用户 `config.toml` 的 `[model_providers.volcengine]` 下，或通过 Codex 的 models.json 注入正确的 ModelInfo
 - **状态**：🔍 待验证（取决于运行时 models.json 返回值）
@@ -85,7 +101,9 @@
 | 2026-03-10 之前 | include 字段修复 + 首次构建 | `3.1` | ✅ 编译成功，已构建 |
 | 2026-03-10 09:x | OutputTextDelta without active item 修复 | `4.1` | ✅ 编译成功 |
 | 2026-03-10 19:43 | config.toml TOML 顺序修复 + 重建 | `4.2` | ✅ 镜像构建完成 |
-| 2026-03-11 10:xx | Reasoning content/encrypted_content null 字段修复 | `4.3`（构建中）| 🔧 进行中 |
+| 2026-03-11 10:48 | Reasoning content/encrypted_content null 字段修复 | `4.3` | ✅ 镜像构建完成，测试通过（豆包正常推理响应）|
+| 2026-03-11 12:24 | FunctionCall 缺失 status 字段修复 | `4.4` | ✅ 构建完成，但测试发现 Reasoning item 同样缺 status |
+| 2026-03-11 13:3x | Reasoning 缺失 status 字段修复 | `4.5`（构建中）| 🔧 进行中 |
 
 ---
 
