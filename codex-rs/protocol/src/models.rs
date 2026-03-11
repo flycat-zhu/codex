@@ -223,6 +223,7 @@ pub enum ResponseItem {
         #[serde(default, skip_serializing_if = "should_serialize_reasoning_content")]
         #[ts(optional)]
         content: Option<Vec<ReasoningItemContent>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         encrypted_content: Option<String>,
     },
     LocalShellCall {
@@ -629,7 +630,9 @@ fn should_serialize_reasoning_content(content: &Option<Vec<ReasoningItemContent>
         Some(content) => !content
             .iter()
             .any(|c| matches!(c, ReasoningItemContent::ReasoningText { .. })),
-        None => false,
+        // None means no content to send; skip to avoid sending "content": null
+        // to providers (e.g. Doubao) that reject unknown fields on reasoning items.
+        None => true,
     }
 }
 
