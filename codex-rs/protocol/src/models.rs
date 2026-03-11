@@ -246,6 +246,12 @@ pub enum ResponseItem {
         // Session::handle_function_call parse it into a Value.
         arguments: String,
         call_id: String,
+        // Some providers (e.g. Doubao) require `status` on function_call items
+        // when they appear in the `input` array of subsequent requests.
+        // OpenAI emits `status: "completed"` in the output_item.done event;
+        // default to "completed" so round-tripped items satisfy this requirement.
+        #[serde(default = "default_status_completed")]
+        status: String,
     },
     // NOTE: The `output` field for `function_call_output` uses a dedicated payload type with
     // custom serialization. On the wire it is either:
@@ -623,6 +629,10 @@ impl From<SandboxMode> for DeveloperInstructions {
 
         DeveloperInstructions::sandbox_text(mode, network_access)
     }
+}
+
+fn default_status_completed() -> String {
+    "completed".to_string()
 }
 
 fn should_serialize_reasoning_content(content: &Option<Vec<ReasoningItemContent>>) -> bool {
