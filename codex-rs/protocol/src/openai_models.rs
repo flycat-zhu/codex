@@ -215,6 +215,10 @@ impl TruncationPolicyConfig {
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, TS, JsonSchema)]
 pub struct ClientVersion(pub i32, pub i32, pub i32);
 
+const fn default_true() -> bool {
+    true
+}
+
 const fn default_effective_context_window_percent() -> i64 {
     95
 }
@@ -242,6 +246,11 @@ pub struct ModelInfo {
     pub default_reasoning_summary: ReasoningSummary,
     pub support_verbosity: bool,
     pub default_verbosity: Option<Verbosity>,
+    /// Whether the provider accepts the `tool_choice` field in requests.
+    /// Defaults to true for OpenAI-compatible providers; set to false for
+    /// providers that do not support it (e.g. doubao-seed-2-0).
+    #[serde(default = "default_true")]
+    pub supports_tool_choice: bool,
     pub apply_patch_tool_type: Option<ApplyPatchToolType>,
     pub truncation_policy: TruncationPolicyConfig,
     pub supports_parallel_tool_calls: bool,

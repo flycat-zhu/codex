@@ -2116,6 +2116,7 @@ impl From<CompactedItem> for ResponseItem {
             }],
             end_turn: None,
             phase: None,
+            status: "completed".to_string(),
         }
     }
 }

@@ -1,0 +1,1191 @@
+# OpenClaw 多角色工作流定义
+# 这是一个完整的、多角色的软件项目开发工作流
+
+workflow:
+  name: "OpenClaw 多角色软件工程工作流"
+  version: "2.0.0"
+  description: "基于多角色协作的完整软件开发工作流，包含需求管理、设计、开发、测试等全流程"
+
+  # 项目元信息
+  project:
+    name: "${PROJECT_NAME}"
+    type: "${PROJECT_TYPE}"
+    language: "${LANGUAGE}"
+    description: "${PROJECT_DESCRIPTION}"
+
+  # 角色定义
+  roles:
+    # 开发端角色
+    - id: "requirement_manager"
+      name: "需求管理者"
+      description: "负责需求收集、整理、冲突检测和优先级排序"
+      skills:
+        - "requirement-analysis"
+        - "git-workflow"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/requirements"
+      commit_prefix: "req-mgr:"
+    
+    - id: "requirement_designer"
+      name: "需求设计者"
+      description: "负责将需求转化为详细的技术设计"
+      skills:
+        - "system-design"
+        - "architecture-patterns"
+        - "git-workflow"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/design"
+      commit_prefix: "designer:"
+    
+    - id: "developer"
+      name: "开发者"
+      description: "负责按照设计进行编码实现"
+      skills:
+        - "code-implementation"
+        - "testing-unit"
+        - "git-workflow"
+        - "code-review"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/implementation"
+      commit_prefix: "dev:"
+    
+    # 测试端角色
+    - id: "test_manager"
+      name: "测试管理者"
+      description: "负责测试策略制定和测试计划管理"
+      skills:
+        - "test-management"
+        - "test-strategy"
+        - "git-workflow"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/test-management"
+      commit_prefix: "test-mgr:"
+    
+    - id: "test_designer"
+      name: "测试设计者"
+      description: "负责设计测试用例和测试场景"
+      skills:
+        - "test-design"
+        - "test-case-writing"
+        - "git-workflow"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/test-design"
+      commit_prefix: "test-designer:"
+    
+    - id: "test_executor"
+      name: "测试执行者"
+      description: "负责执行测试并报告结果"
+      skills:
+        - "test-execution"
+        - "bug-tracking"
+        - "git-workflow"
+        - "openclaw-workflow"
+      git_branch_prefix: "feature/test-execution"
+      commit_prefix: "test-executor:"
+
+  # Git 工作流配置
+  git:
+    main_branch: "main"
+    branch_naming:
+      requirements: "feature/requirements-analysis"
+      design: "feature/design-{version}"
+      implementation: "feature/implementation-{module}"
+      test_management: "feature/test-management"
+      test_design: "feature/test-design-{version}"
+      test_execution: "feature/test-execution-{version}"
+    commit_format: "conventional"  # conventional commits
+    pr_required: true
+    code_review_required: true
+    merge_strategy: "squash"  # squash, merge, rebase
+
+  # Skills 配置
+  skills:
+    base_path: ".codex/skills"
+    required_skills:
+      - "openclaw-workflow"
+      - "git-workflow"
+    role_specific_skills:
+      requirement_manager:
+        - "requirement-analysis"
+      requirement_designer:
+        - "system-design"
+        - "architecture-patterns"
+      developer:
+        - "code-implementation"
+        - "testing-unit"
+        - "code-review"
+      test_manager:
+        - "test-management"
+        - "test-strategy"
+      test_designer:
+        - "test-design"
+        - "test-case-writing"
+      test_executor:
+        - "test-execution"
+        - "bug-tracking"
+
+  # 工作流阶段
+  phases:
+    # ========== 阶段 1: 项目初始化 ==========
+    - phase: "project_initialization"
+      description: "初始化项目，创建基础结构和配置"
+      parallel: false
+      
+      tasks:
+        - id: "init_1"
+          name: "创建工作流目录结构"
+          role: "system"
+          prompt: |
+            创建 OpenClaw 工作流所需的目录结构：
+            1. 创建 .codex/skills/ 目录
+            2. 创建 docs/requirements/ 目录
+            3. 创建 docs/design/ 目录
+            4. 创建 docs/implementation/ 目录
+            5. 创建 docs/testing/ 目录
+            6. 创建 .openclaw/checkpoints/ 目录
+            
+            确保所有目录都有适当的权限。
+          tools:
+            - "shell"
+            - "write_file"
+          outputs:
+            - name: "directory_structure"
+              type: "directories"
+          validation:
+            commands:
+              - "test -d .codex/skills"
+              - "test -d docs/requirements"
+              - "test -d docs/design"
+              - "test -d docs/implementation"
+              - "test -d docs/testing"
+        
+        - id: "init_2"
+          name: "初始化 Git 仓库"
+          role: "system"
+          dependencies: ["init_1"]
+          prompt: |
+            初始化 Git 仓库并配置：
+            1. 如果还没有 Git 仓库，初始化一个
+            2. 创建 main 分支
+            3. 配置 .gitignore
+            4. 创建初始提交
+            
+            确保 Git 配置正确。
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "git status"
+              - "git branch --show-current | grep -E 'main|master'"
+        
+        - id: "init_3"
+          name: "加载工作流 Skills"
+          role: "system"
+          dependencies: ["init_1", "init_2"]
+          prompt: |
+            确保工作流所需的 Skills 已加载：
+            1. 检查 .codex/skills/openclaw-workflow/ 是否存在
+            2. 如果不存在，创建工作流 Skill
+            3. 检查其他必需的 Skills
+            
+            参考文档：docs/openclaw-multi-role-workflow.md
+          tools:
+            - "shell"
+            - "write_file"
+          validation:
+            files:
+              - ".codex/skills/openclaw-workflow/SKILL.md"
+            checks:
+              - "工作流 Skill 应已创建"
+      
+      validation:
+        files:
+          - ".codex/skills/openclaw-workflow/SKILL.md"
+        commands:
+          - "git status"
+        manual_review: false
+      
+      next_phase: "requirements_management"
+
+    # ========== 阶段 2: 需求管理 ==========
+    - phase: "requirements_management"
+      description: "需求管理者分析和管理需求"
+      role: "requirement_manager"
+      parallel: false
+      
+      tasks:
+        - id: "req_mgr_1"
+          name: "需求收集和整理"
+          role: "requirement_manager"
+          prompt: |
+            作为需求管理者，分析用户提供的需求：
+            
+            用户需求：
+            ${USER_REQUIREMENT}
+            
+            请完成以下任务：
+            1. 提取所有功能需求和非功能需求
+            2. 为每个需求分配唯一标识符（格式：REQ-001, REQ-002, ...）
+            3. 识别需求的类型（功能、性能、安全、可用性等）
+            4. 识别需求之间的依赖关系
+            5. 生成需求分析文档
+            
+            输出到：docs/requirements/requirements-analysis.md
+            
+            遵循需求分析 Skill 的规范。
+          inputs:
+            - name: "USER_REQUIREMENT"
+              type: "string"
+              required: true
+          outputs:
+            - name: "requirements_analysis"
+              type: "file"
+              path: "docs/requirements/requirements-analysis.md"
+          validation:
+            files:
+              - "docs/requirements/requirements-analysis.md"
+            checks:
+              - "文档应包含所有需求的唯一标识符"
+              - "文档应包含需求类型分类"
+              - "文档应包含需求依赖关系"
+        
+        - id: "req_mgr_2"
+          name: "需求冲突检测"
+          role: "requirement_manager"
+          dependencies: ["req_mgr_1"]
+          prompt: |
+            检测需求之间的冲突：
+            1. 检查逻辑冲突（相互矛盾的需求）
+            2. 检查资源冲突（资源需求超出限制）
+            3. 检查时间冲突（时间线不合理的需求）
+            4. 生成冲突报告
+            
+            如果有冲突，提出解决方案。
+            
+            输出到：docs/requirements/requirements-conflicts.md
+          outputs:
+            - name: "conflicts_report"
+              type: "file"
+              path: "docs/requirements/requirements-conflicts.md"
+          validation:
+            files:
+              - "docs/requirements/requirements-conflicts.md"
+            checks:
+              - "冲突报告应清晰列出所有冲突"
+              - "每个冲突应有解决方案"
+        
+        - id: "req_mgr_3"
+          name: "需求优先级排序"
+          role: "requirement_manager"
+          dependencies: ["req_mgr_1", "req_mgr_2"]
+          prompt: |
+            确定需求的优先级：
+            1. 使用 MoSCoW 方法（Must have, Should have, Could have, Won't have）
+            2. 考虑业务价值和技术复杂度
+            3. 考虑依赖关系
+            4. 生成优先级列表
+            
+            输出到：docs/requirements/requirements-priority.md
+          outputs:
+            - name: "priority_list"
+              type: "file"
+              path: "docs/requirements/requirements-priority.md"
+          validation:
+            files:
+              - "docs/requirements/requirements-priority.md"
+            checks:
+              - "所有需求都应分配优先级"
+              - "优先级应合理且一致"
+        
+        - id: "req_mgr_4"
+          name: "创建需求追踪矩阵"
+          role: "requirement_manager"
+          dependencies: ["req_mgr_1", "req_mgr_3"]
+          prompt: |
+            创建需求追踪矩阵：
+            1. 列出所有需求及其属性
+            2. 建立需求与设计、实现、测试的追踪关系
+            3. 确保可追溯性
+            
+            输出到：docs/requirements/requirements-traceability-matrix.md
+          outputs:
+            - name: "traceability_matrix"
+              type: "file"
+              path: "docs/requirements/requirements-traceability-matrix.md"
+          validation:
+            files:
+              - "docs/requirements/requirements-traceability-matrix.md"
+            checks:
+              - "矩阵应包含所有需求"
+              - "追踪关系应完整"
+        
+        - id: "req_mgr_5"
+          name: "提交需求文档到 Git"
+          role: "requirement_manager"
+          dependencies: ["req_mgr_1", "req_mgr_2", "req_mgr_3", "req_mgr_4"]
+          prompt: |
+            将需求文档提交到 Git：
+            1. 创建分支：feature/requirements-analysis
+            2. 添加所有需求文档
+            3. 提交消息格式：req-mgr: docs(requirements): complete requirements analysis
+            
+            遵循 Git 工作流 Skill 的规范。
+          tools:
+            - "shell"
+          git:
+            branch: "feature/requirements-analysis"
+            commit_prefix: "req-mgr:"
+            commit_message: "docs(requirements): complete requirements analysis"
+          validation:
+            commands:
+              - "git branch --show-current | grep requirements-analysis"
+              - "git log -1 --pretty=format:'%s' | grep 'req-mgr:'"
+        
+        - id: "req_mgr_6"
+          name: "创建需求管理 PR"
+          role: "requirement_manager"
+          dependencies: ["req_mgr_5"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[需求管理] 需求分析 v1.0
+            2. PR 描述应包含：
+               - 需求分析总结
+               - 主要需求列表
+               - 优先级说明
+               - 冲突解决情况
+            3. 标记为 ready for review
+            
+            等待代码审查通过后合并。
+          tools:
+            - "shell"
+          git:
+            target_branch: "main"
+            pr_title: "[需求管理] 需求分析 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+              - "PR 描述应完整"
+      
+      validation:
+        files:
+          - "docs/requirements/requirements-analysis.md"
+          - "docs/requirements/requirements-priority.md"
+          - "docs/requirements/requirements-traceability-matrix.md"
+        manual_review: true
+        review_prompt: "请确认需求分析是否完整和准确"
+      
+      next_phase: "requirements_design"
+
+    # ========== 阶段 3: 需求设计 ==========
+    - phase: "requirements_design"
+      description: "需求设计者将需求转化为技术设计"
+      role: "requirement_designer"
+      parallel: false
+      
+      tasks:
+        - id: "designer_1"
+          name: "系统架构设计"
+          role: "requirement_designer"
+          prompt: |
+            作为需求设计者，基于需求分析文档进行系统架构设计：
+            
+            参考文档：
+            - docs/requirements/requirements-analysis.md
+            - docs/requirements/requirements-priority.md
+            
+            请完成：
+            1. 设计整体系统架构
+            2. 确定架构模式（MVC, 微服务, 分层等）
+            3. 划分核心模块
+            4. 定义模块间交互
+            5. 生成架构设计文档
+            
+            输出到：docs/design/architecture.md
+            
+            遵循系统设计 Skill 的规范。
+          outputs:
+            - name: "architecture_doc"
+              type: "file"
+              path: "docs/design/architecture.md"
+          validation:
+            files:
+              - "docs/design/architecture.md"
+            checks:
+              - "架构设计应清晰"
+              - "模块划分应合理"
+        
+        - id: "designer_2"
+          name: "系统详细设计"
+          role: "requirement_designer"
+          dependencies: ["designer_1"]
+          prompt: |
+            进行系统详细设计：
+            1. 设计每个模块的详细功能
+            2. 定义数据模型
+            3. 设计算法和业务流程
+            4. 生成系统设计文档
+            
+            输出到：docs/design/system-design.md
+          outputs:
+            - name: "system_design_doc"
+              type: "file"
+              path: "docs/design/system-design.md"
+          validation:
+            files:
+              - "docs/design/system-design.md"
+            checks:
+              - "设计应覆盖所有需求"
+              - "设计应详细可实施"
+        
+        - id: "designer_3"
+          name: "接口设计"
+          role: "requirement_designer"
+          dependencies: ["designer_2"]
+          prompt: |
+            设计系统接口：
+            1. 定义 API 接口（如果是 API 项目）
+            2. 定义模块间接口
+            3. 定义数据接口
+            4. 生成接口设计文档
+            
+            输出到：docs/design/interfaces.md
+          outputs:
+            - name: "interfaces_doc"
+              type: "file"
+              path: "docs/design/interfaces.md"
+          validation:
+            files:
+              - "docs/design/interfaces.md"
+            checks:
+              - "接口定义应完整"
+              - "接口应清晰可理解"
+        
+        - id: "designer_4"
+          name: "技术选型"
+          role: "requirement_designer"
+          dependencies: ["designer_1"]
+          prompt: |
+            确定技术选型：
+            1. 选择编程语言和版本
+            2. 选择框架和库
+            3. 选择开发工具
+            4. 选择测试框架
+            5. 生成技术选型文档
+            
+            输出到：docs/design/tech-stack.md
+          outputs:
+            - name: "tech_stack_doc"
+              type: "file"
+              path: "docs/design/tech-stack.md"
+          validation:
+            files:
+              - "docs/design/tech-stack.md"
+            checks:
+              - "技术选型应合理"
+              - "选型应说明理由"
+        
+        - id: "designer_5"
+          name: "提交设计文档到 Git"
+          role: "requirement_designer"
+          dependencies: ["designer_1", "designer_2", "designer_3", "designer_4"]
+          prompt: |
+            将设计文档提交到 Git：
+            1. 从 feature/requirements-analysis 分支创建新分支：feature/design-v1
+            2. 添加所有设计文档
+            3. 提交消息格式：designer: docs(design): complete system design v1.0
+          tools:
+            - "shell"
+          git:
+            source_branch: "feature/requirements-analysis"
+            branch: "feature/design-v1"
+            commit_prefix: "designer:"
+            commit_message: "docs(design): complete system design v1.0"
+          validation:
+            commands:
+              - "git branch --show-current | grep design"
+        
+        - id: "designer_6"
+          name: "创建设计 PR"
+          role: "requirement_designer"
+          dependencies: ["designer_5"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[设计] 系统设计 v1.0
+            2. PR 描述应包含：
+               - 架构设计概述
+               - 主要设计决策
+              3. 标记为 ready for review
+            
+            等待代码审查通过后合并。
+          tools:
+            - "shell"
+          git:
+            target_branch: "feature/requirements-analysis"
+            pr_title: "[设计] 系统设计 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+      
+      validation:
+        files:
+          - "docs/design/architecture.md"
+          - "docs/design/system-design.md"
+          - "docs/design/interfaces.md"
+          - "docs/design/tech-stack.md"
+        manual_review: true
+        review_prompt: "请确认设计是否完整和合理"
+      
+      next_phase: "development_implementation"
+
+    # ========== 阶段 4: 开发实现 ==========
+    - phase: "development_implementation"
+      description: "开发者按照设计进行编码实现"
+      role: "developer"
+      parallel: true  # 可以并行实现多个模块
+      
+      tasks:
+        - id: "dev_1"
+          name: "项目初始化"
+          role: "developer"
+          prompt: |
+            初始化项目结构：
+            1. 根据技术选型创建项目骨架
+            2. 配置开发环境
+            3. 安装依赖
+            4. 创建基础目录结构
+            
+            参考：docs/design/tech-stack.md
+          tools:
+            - "shell"
+            - "write_file"
+          validation:
+            commands:
+              - "test -f package.json || test -f Cargo.toml || test -f requirements.txt || test -f pyproject.toml"
+        
+        - id: "dev_2"
+          name: "实现核心模块"
+          role: "developer"
+          dependencies: ["dev_1"]
+          prompt: |
+            实现核心功能模块：
+            1. 根据系统设计文档实现核心模块
+            2. 遵循架构设计
+            3. 实现接口定义
+            4. 编写代码文档
+            
+            参考：
+            - docs/design/system-design.md
+            - docs/design/architecture.md
+            - docs/design/interfaces.md
+            
+            确保代码质量：
+            - 遵循编码规范
+            - 添加适当的注释
+            - 处理错误情况
+          tools:
+            - "write_file"
+            - "shell"
+          outputs:
+            - name: "core_code"
+              type: "code"
+          validation:
+            commands:
+              - "npm run build || cargo build || python -m py_compile src/*.py || true"
+            checks:
+              - "代码应能编译/通过语法检查"
+              - "核心功能应已实现"
+        
+        - id: "dev_3"
+          name: "编写单元测试"
+          role: "developer"
+          dependencies: ["dev_2"]
+          prompt: |
+            为核心功能编写单元测试：
+            1. 为每个公共函数编写测试
+            2. 测试覆盖率目标：> 80%
+            3. 测试边界条件和错误情况
+            4. 确保测试清晰可维护
+            
+            遵循测试 Skill 的规范。
+          tools:
+            - "write_file"
+          outputs:
+            - name: "unit_tests"
+              type: "code"
+          validation:
+            files:
+              - "test/**/*.test.*"
+              - "tests/**/*.test.*"
+            commands:
+              - "npm test || cargo test || pytest || true"
+            checks:
+              - "单元测试应已编写"
+              - "测试覆盖率应 > 80%"
+        
+        - id: "dev_4"
+          name: "代码审查和修复"
+          role: "developer"
+          dependencies: ["dev_3"]
+          prompt: |
+            进行代码审查和修复：
+            1. 运行代码检查工具（linter）
+            2. 修复所有警告和错误
+            3. 确保代码风格一致
+            4. 运行所有测试确保通过
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "npm run lint || cargo clippy || pylint || true"
+            checks:
+              - "代码应通过 linter 检查"
+              - "所有测试应通过"
+        
+        - id: "dev_5"
+          name: "提交代码到 Git"
+          role: "developer"
+          dependencies: ["dev_4"]
+          prompt: |
+            将代码提交到 Git：
+            1. 从 feature/design-v1 分支创建实现分支：feature/implementation-core
+            2. 添加所有代码和测试
+            3. 提交消息格式：dev: feat(core): implement core modules
+            
+            遵循 Conventional Commits 规范。
+          tools:
+            - "shell"
+          git:
+            source_branch: "feature/design-v1"
+            branch: "feature/implementation-core"
+            commit_prefix: "dev:"
+            commit_message: "feat(core): implement core modules"
+          validation:
+            commands:
+              - "git branch --show-current | grep implementation"
+        
+        - id: "dev_6"
+          name: "创建实现 PR"
+          role: "developer"
+          dependencies: ["dev_5"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[实现] 核心模块 v1.0
+            2. PR 描述应包含：
+               - 实现的功能概述
+               - 测试覆盖率
+               - 代码质量检查结果
+            3. 标记为 ready for review
+          tools:
+            - "shell"
+          git:
+            target_branch: "feature/design-v1"
+            pr_title: "[实现] 核心模块 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+      
+      validation:
+        files:
+          - "src/**/*.rs"
+          - "src/**/*.py"
+          - "src/**/*.ts"
+        commands:
+          - "npm test || cargo test || pytest"
+        checks:
+          - "所有测试应通过"
+          - "代码覆盖率应达标"
+        manual_review: true
+        review_prompt: "请确认实现是否符合设计"
+      
+      next_phase: "test_management"
+
+    # ========== 阶段 5: 测试管理（与开发并行） ==========
+    - phase: "test_management"
+      description: "测试管理者制定测试策略"
+      role: "test_manager"
+      parallel: true  # 可以与开发并行
+      
+      tasks:
+        - id: "test_mgr_1"
+          name: "制定测试策略"
+          role: "test_manager"
+          prompt: |
+            作为测试管理者，制定测试策略：
+            
+            参考文档：
+            - docs/requirements/requirements-analysis.md
+            - docs/design/system-design.md
+            
+            请完成：
+            1. 确定测试类型（单元测试、集成测试、系统测试等）
+            2. 确定测试范围
+            3. 确定测试方法
+            4. 生成测试策略文档
+            
+            输出到：docs/testing/test-strategy.md
+            
+            遵循测试管理 Skill 的规范。
+          outputs:
+            - name: "test_strategy"
+              type: "file"
+              path: "docs/testing/test-strategy.md"
+          validation:
+            files:
+              - "docs/testing/test-strategy.md"
+            checks:
+              - "测试策略应覆盖所有需求"
+        
+        - id: "test_mgr_2"
+          name: "制定测试计划"
+          role: "test_manager"
+          dependencies: ["test_mgr_1"]
+          prompt: |
+            制定详细的测试计划：
+            1. 确定测试阶段和时间表
+            2. 分配测试资源
+            3. 确定测试环境
+            4. 生成测试计划文档
+            
+            输出到：docs/testing/test-plan.md
+          outputs:
+            - name: "test_plan"
+              type: "file"
+              path: "docs/testing/test-plan.md"
+          validation:
+            files:
+              - "docs/testing/test-plan.md"
+            checks:
+              - "测试计划应详细可执行"
+        
+        - id: "test_mgr_3"
+          name: "提交测试管理文档到 Git"
+          role: "test_manager"
+          dependencies: ["test_mgr_1", "test_mgr_2"]
+          prompt: |
+            将测试管理文档提交到 Git：
+            1. 从 main 分支创建分支：feature/test-management
+            2. 添加测试管理文档
+            3. 提交消息格式：test-mgr: docs(testing): complete test strategy and plan
+          tools:
+            - "shell"
+          git:
+            source_branch: "main"
+            branch: "feature/test-management"
+            commit_prefix: "test-mgr:"
+            commit_message: "docs(testing): complete test strategy and plan"
+          validation:
+            commands:
+              - "git branch --show-current | grep test-management"
+        
+        - id: "test_mgr_4"
+          name: "创建测试管理 PR"
+          role: "test_manager"
+          dependencies: ["test_mgr_3"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[测试管理] 测试策略 v1.0
+            2. 标记为 ready for review
+          tools:
+            - "shell"
+          git:
+            target_branch: "main"
+            pr_title: "[测试管理] 测试策略 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+      
+      validation:
+        files:
+          - "docs/testing/test-strategy.md"
+          - "docs/testing/test-plan.md"
+        manual_review: true
+        review_prompt: "请确认测试策略是否合理"
+      
+      next_phase: "test_design"
+
+    # ========== 阶段 6: 测试设计 ==========
+    - phase: "test_design"
+      description: "测试设计者设计测试用例"
+      role: "test_designer"
+      parallel: false
+      
+      tasks:
+        - id: "test_designer_1"
+          name: "设计测试用例"
+          role: "test_designer"
+          prompt: |
+            作为测试设计者，设计测试用例：
+            
+            参考文档：
+            - docs/testing/test-strategy.md
+            - docs/design/system-design.md
+            - docs/requirements/requirements-analysis.md
+            
+            请完成：
+            1. 为每个功能点设计测试用例
+            2. 设计正常流程测试用例
+            3. 设计异常流程测试用例
+            4. 设计边界条件测试用例
+            5. 生成测试用例文档
+            
+            输出到：docs/testing/test-cases.md
+            
+            遵循测试设计 Skill 的规范。
+          outputs:
+            - name: "test_cases"
+              type: "file"
+              path: "docs/testing/test-cases.md"
+          validation:
+            files:
+              - "docs/testing/test-cases.md"
+            checks:
+              - "测试用例应覆盖所有功能点"
+        
+        - id: "test_designer_2"
+          name: "设计测试场景"
+          role: "test_designer"
+          dependencies: ["test_designer_1"]
+          prompt: |
+            设计测试场景：
+            1. 设计端到端测试场景
+            2. 设计用户场景测试
+            3. 设计性能测试场景
+            4. 生成测试场景文档
+            
+            输出到：docs/testing/test-scenarios.md
+          outputs:
+            - name: "test_scenarios"
+              type: "file"
+              path: "docs/testing/test-scenarios.md"
+          validation:
+            files:
+              - "docs/testing/test-scenarios.md"
+            checks:
+              - "测试场景应完整"
+        
+        - id: "test_designer_3"
+          name: "编写测试脚本"
+          role: "test_designer"
+          dependencies: ["test_designer_1"]
+          prompt: |
+            编写测试脚本：
+            1. 根据测试用例编写自动化测试脚本
+            2. 创建测试数据
+            3. 配置测试环境
+            4. 确保测试脚本可执行
+            
+            输出到：tests/integration/
+          tools:
+            - "write_file"
+          outputs:
+            - name: "test_scripts"
+              type: "code"
+          validation:
+            files:
+              - "tests/integration/**/*.test.*"
+            checks:
+              - "测试脚本应已编写"
+        
+        - id: "test_designer_4"
+          name: "提交测试设计到 Git"
+          role: "test_designer"
+          dependencies: ["test_designer_1", "test_designer_2", "test_designer_3"]
+          prompt: |
+            将测试设计提交到 Git：
+            1. 从 feature/test-management 分支创建分支：feature/test-design-v1
+            2. 添加测试设计文档和脚本
+            3. 提交消息格式：test-designer: docs(testing): complete test design v1.0
+          tools:
+            - "shell"
+          git:
+            source_branch: "feature/test-management"
+            branch: "feature/test-design-v1"
+            commit_prefix: "test-designer:"
+            commit_message: "docs(testing): complete test design v1.0"
+          validation:
+            commands:
+              - "git branch --show-current | grep test-design"
+        
+        - id: "test_designer_5"
+          name: "创建测试设计 PR"
+          role: "test_designer"
+          dependencies: ["test_designer_4"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[测试设计] 测试用例 v1.0
+            2. 标记为 ready for review
+          tools:
+            - "shell"
+          git:
+            target_branch: "feature/test-management"
+            pr_title: "[测试设计] 测试用例 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+      
+      validation:
+        files:
+          - "docs/testing/test-cases.md"
+          - "docs/testing/test-scenarios.md"
+          - "tests/integration/**/*.test.*"
+        manual_review: true
+        review_prompt: "请确认测试设计是否完整"
+      
+      next_phase: "test_execution"
+
+    # ========== 阶段 7: 测试执行 ==========
+    - phase: "test_execution"
+      description: "测试执行者执行测试并报告结果"
+      role: "test_executor"
+      parallel: false
+      
+      tasks:
+        - id: "test_executor_1"
+          name: "执行测试用例"
+          role: "test_executor"
+          prompt: |
+            作为测试执行者，执行测试用例：
+            
+            参考文档：
+            - docs/testing/test-cases.md
+            - docs/testing/test-scenarios.md
+            - tests/integration/
+            
+            请完成：
+            1. 执行所有测试用例
+            2. 记录测试结果
+            3. 识别失败的测试
+            4. 生成测试执行报告
+            
+            输出到：docs/testing/test-execution-report.md
+            
+            遵循测试执行 Skill 的规范。
+          tools:
+            - "shell"
+          outputs:
+            - name: "test_execution_report"
+              type: "file"
+              path: "docs/testing/test-execution-report.md"
+          validation:
+            files:
+              - "docs/testing/test-execution-report.md"
+            checks:
+              - "所有测试用例应已执行"
+        
+        - id: "test_executor_2"
+          name: "报告缺陷"
+          role: "test_executor"
+          dependencies: ["test_executor_1"]
+          prompt: |
+            报告发现的缺陷：
+            1. 记录所有失败的测试
+            2. 分析缺陷原因
+            3. 分类缺陷（严重性、优先级）
+            4. 生成缺陷报告
+            
+            输出到：docs/testing/bug-reports.md
+          outputs:
+            - name: "bug_reports"
+              type: "file"
+              path: "docs/testing/bug-reports.md"
+          validation:
+            files:
+              - "docs/testing/bug-reports.md"
+            checks:
+              - "缺陷应已分类和优先级排序"
+        
+        - id: "test_executor_3"
+          name: "生成测试覆盖率报告"
+          role: "test_executor"
+          dependencies: ["test_executor_1"]
+          prompt: |
+            生成测试覆盖率报告：
+            1. 运行覆盖率工具
+            2. 生成覆盖率报告
+            3. 分析覆盖率数据
+            4. 生成覆盖率报告文档
+            
+            输出到：docs/testing/coverage-report.md
+          tools:
+            - "shell"
+          outputs:
+            - name: "coverage_report"
+              type: "file"
+              path: "docs/testing/coverage-report.md"
+          validation:
+            files:
+              - "docs/testing/coverage-report.md"
+            checks:
+              - "覆盖率应达标（> 80%）"
+        
+        - id: "test_executor_4"
+          name: "生成测试总结"
+          role: "test_executor"
+          dependencies: ["test_executor_1", "test_executor_2", "test_executor_3"]
+          prompt: |
+            生成测试总结：
+            1. 汇总测试执行情况
+            2. 总结测试结果
+            3. 提出改进建议
+            4. 生成测试总结文档
+            
+            输出到：docs/testing/test-summary.md
+          outputs:
+            - name: "test_summary"
+              type: "file"
+              path: "docs/testing/test-summary.md"
+          validation:
+            files:
+              - "docs/testing/test-summary.md"
+        
+        - id: "test_executor_5"
+          name: "提交测试结果到 Git"
+          role: "test_executor"
+          dependencies: ["test_executor_1", "test_executor_2", "test_executor_3", "test_executor_4"]
+          prompt: |
+            将测试结果提交到 Git：
+            1. 从 feature/test-design-v1 分支创建分支：feature/test-execution-v1
+            2. 添加测试报告
+            3. 提交消息格式：test-executor: docs(testing): complete test execution v1.0
+          tools:
+            - "shell"
+          git:
+            source_branch: "feature/test-design-v1"
+            branch: "feature/test-execution-v1"
+            commit_prefix: "test-executor:"
+            commit_message: "docs(testing): complete test execution v1.0"
+          validation:
+            commands:
+              - "git branch --show-current | grep test-execution"
+        
+        - id: "test_executor_6"
+          name: "创建测试执行 PR"
+          role: "test_executor"
+          dependencies: ["test_executor_5"]
+          prompt: |
+            创建 Pull Request：
+            1. PR 标题：[测试执行] 测试报告 v1.0
+            2. 标记为 ready for review
+          tools:
+            - "shell"
+          git:
+            target_branch: "feature/test-design-v1"
+            pr_title: "[测试执行] 测试报告 v1.0"
+          validation:
+            checks:
+              - "PR 应已创建"
+      
+      validation:
+        files:
+          - "docs/testing/test-execution-report.md"
+          - "docs/testing/bug-reports.md"
+          - "docs/testing/test-summary.md"
+        manual_review: true
+        review_prompt: "请确认测试执行是否完整"
+      
+      next_phase: "integration_and_delivery"
+
+    # ========== 阶段 8: 集成和交付 ==========
+    - phase: "integration_and_delivery"
+      description: "集成所有功能并准备交付"
+      role: "system"
+      parallel: false
+      
+      tasks:
+        - id: "integration_1"
+          name: "合并所有分支"
+          role: "system"
+          prompt: |
+            合并所有功能分支到 main：
+            1. 合并 feature/requirements-analysis 到 main
+            2. 合并 feature/design-v1 到 main
+            3. 合并 feature/implementation-core 到 main
+            4. 合并 feature/test-management 到 main
+            5. 合并 feature/test-design-v1 到 main
+            6. 合并 feature/test-execution-v1 到 main
+            
+            解决所有合并冲突。
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "git branch --show-current | grep main"
+            checks:
+              - "所有分支应已合并"
+        
+        - id: "integration_2"
+          name: "执行集成测试"
+          role: "system"
+          dependencies: ["integration_1"]
+          prompt: |
+            执行集成测试：
+            1. 运行所有集成测试
+            2. 验证系统整体功能
+            3. 确保所有模块协作正常
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "npm test || cargo test || pytest"
+            checks:
+              - "集成测试应全部通过"
+        
+        - id: "integration_3"
+          name: "生成项目报告"
+          role: "system"
+          dependencies: ["integration_2"]
+          prompt: |
+            生成最终项目报告：
+            1. 汇总所有阶段的工作
+            2. 总结项目成果
+            3. 列出交付物清单
+            4. 生成项目报告
+            
+            输出到：docs/project-report.md
+          outputs:
+            - name: "project_report"
+              type: "file"
+              path: "docs/project-report.md"
+          validation:
+            files:
+              - "docs/project-report.md"
+        
+        - id: "integration_4"
+          name: "创建交付检查点"
+          role: "system"
+          dependencies: ["integration_3"]
+          prompt: |
+            创建最终检查点：
+            1. 保存 Git 状态
+            2. 保存所有文档版本
+            3. 创建交付检查点
+            
+            输出到：.openclaw/checkpoints/delivery-v1.0
+          tools:
+            - "shell"
+            - "write_file"
+          validation:
+            files:
+              - ".openclaw/checkpoints/delivery-v1.0"
+      
+      validation:
+        files:
+          - "docs/project-report.md"
+        commands:
+          - "git branch --show-current | grep main"
+        manual_review: true
+        review_prompt: "请确认项目已准备好交付"
+      
+      next_phase: null  # 工作流结束
+
+  # 工作流配置
+  config:
+    max_retries: 3
+    retry_delay: 5
+    allow_manual_intervention: true
+    save_checkpoints: true
+    checkpoint_dir: ".openclaw/checkpoints"
+    checkpoint_interval: 1  # 每个阶段完成后创建检查点
+    enable_parallel_phases: true
+    code_review_required: true
+    test_coverage_threshold: 80

@@ -210,6 +210,10 @@ pub enum ResponseItem {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
         phase: Option<MessagePhase>,
+        // Some providers (e.g. Doubao) require `status` on message items in
+        // the input of subsequent requests.
+        #[serde(default = "default_status_completed")]
+        status: String,
     },
     Reasoning {
         #[serde(default, skip_serializing)]
@@ -620,6 +624,7 @@ impl From<DeveloperInstructions> for ResponseItem {
             }],
             end_turn: None,
             phase: None,
+            status: default_status_completed(),
         }
     }
 }
@@ -784,6 +789,7 @@ impl From<ResponseInputItem> for ResponseItem {
                 id: None,
                 end_turn: None,
                 phase: None,
+                status: default_status_completed(),
             },
             ResponseInputItem::FunctionCallOutput { call_id, output } => {
                 Self::FunctionCallOutput { call_id, output }

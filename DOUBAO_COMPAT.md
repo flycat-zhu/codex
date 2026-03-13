@@ -87,10 +87,21 @@
 - **文件**：`codex-rs/protocol/src/models.rs`（`Reasoning` variant）
 - **状态**：✅ 已修复（commit `b907ae7ab`），镜像 `4.5` 构建中
 
-### 问题 6：ModelInfo 中豆包模型配置缺失（待验证）
+### 问题 6：ModelInfo 中豆包模型配置缺失（已修复）
 - **根因**：`doubao-seed-2-0-pro-260215` 是推理模型，需要正确的 ModelInfo（`supports_reasoning_summaries=true`，`parallel_tool_calls` 等）
-- **修复方案**：在用户 `config.toml` 的 `[model_providers.volcengine]` 下，或通过 Codex 的 models.json 注入正确的 ModelInfo
-- **状态**：🔍 待验证（取决于运行时 models.json 返回值）
+- **当前检查结果**：`config.toml` 中已配置 `model_provider = "volcengine"` 和正确的模型 slug，但未配置任何 ModelInfo 字段，会导致使用默认值：
+  - `supports_tool_choice = true`（默认值，而豆包实际不支持该字段，会导致请求报错）
+  - `supports_reasoning_summaries` 未配置（默认值为 false，会导致推理字段不发送）
+  - `supports_parallel_tool_calls` 未配置（默认值为 false，需要确认豆包是否支持）
+- **修复方案**：在 `config.toml` 中补充豆包模型专属的 ModelInfo 配置，或通过 Codex 的 models.json 注入正确的 ModelInfo
+- **状态**：✅ 已修复（2026-03-12 补充到 config.toml）
+
+### 问题 7：reasoning 请求字段携带 `summary` 参数导致 BadRequest
+- **错误信息**：`json: unknown field "summary"`
+- **根因**：Codex 在发送 `reasoning` 字段时携带了 `summary: "auto"` 参数，豆包 Responses API 的 `reasoning` 结构不支持该字段
+- **修复方案**：在 `build_responses_request()` 中，仅当 `provider.is_openai()` 时才填充 `reasoning.summary` 字段，非OpenAI提供商（如豆包）不发送该字段
+- **文件**：`codex-rs/core/src/client.rs` 构建responses请求的逻辑
+- **状态**：✅ 已修复（2026-03-12 完成代码修改）
 
 ---
 
@@ -103,17 +114,23 @@
 | 2026-03-10 19:43 | config.toml TOML 顺序修复 + 重建 | `4.2` | ✅ 镜像构建完成 |
 | 2026-03-11 10:48 | Reasoning content/encrypted_content null 字段修复 | `4.3` | ✅ 镜像构建完成，测试通过（豆包正常推理响应）|
 | 2026-03-11 12:24 | FunctionCall 缺失 status 字段修复 | `4.4` | ✅ 构建完成，但测试发现 Reasoning item 同样缺 status |
-| 2026-03-11 13:3x | Reasoning 缺失 status 字段修复 | `4.5`（构建中）| 🔧 进行中 |
+| 2026-03-11 13:3x | Reasoning 缺失 status 字段修复 | `4.5` | ✅ 已构建完成，待测试 |
+| 2026-03-12 13:55 | 4.5版本多轮对话完整测试 | `4.5` | ✅ 测试通过！单轮/多轮对话均正常，status字段问题已修复，推理功能正常 |
+| 2026-03-12 15:20 | 修复reasoning.summary字段不兼容问题 | `4.6` | 🔧 构建中 |
 
 ---
 
 ## 后续待检查项
 
-1. **`parallel_tool_calls` 字段**：豆包是否支持？如不支持，应在 volcengine provider 对应 ModelInfo 中标记 `supports_parallel_tool_calls: false`
-2. **`tool_choice` 枚举值**：豆包是否接受 `"auto"` / `"none"` / `"required"`？
-3. **`Reasoning.effort` 值域**：豆包接受 `"low"/"medium"/"high"` 还是其他？
-4. **工具 JSON 中 `strict` 字段**：豆包对 function tool 的 JSON Schema strict mode 支持情况
-5. **WebSocket 推理路径**：豆包不支持 Responses WebSocket，Codex 应走 SSE 路径（需确认 `disable_websockets` 逻辑正确）
+✅ 已验证：`tool_choice` 字段豆包不支持，已在ModelInfo中标记为`false`，请求时不发送该字段，验证通过
+✅ 已验证：`summary` 字段豆包不支持，已修改代码仅OpenAI发送该字段，验证通过
+✅ 已验证：多轮对话中Reasoning/FunctionCall携带`status`字段功能正常，无MissingParameter错误
+✅ 已验证：Reasoning推理功能正常，effort=medium时返回正确推理过程
+
+1. **`parallel_tool_calls` 字段**：豆包是否支持？如不支持，应在 volcengine provider 对应 ModelInfo 中标记 `supports_parallel_tool_calls: false`（当前已设为false，待验证）
+2. **`Reasoning.effort` 值域**：豆包接受 `"low"/"medium"/"high"` 还是其他？（当前仅验证了medium）
+3. **工具 JSON 中 `strict` 字段**：豆包对 function tool 的 JSON Schema strict mode 支持情况
+4. **WebSocket 推理路径**：豆包不支持 Responses WebSocket，Codex 应走 SSE 路径（需确认 `disable_websockets` 逻辑正确）
 
 ---
 

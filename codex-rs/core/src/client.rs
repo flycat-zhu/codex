@@ -528,7 +528,7 @@ impl ModelClientSession {
         let reasoning = if model_info.supports_reasoning_summaries {
             Some(Reasoning {
                 effort: effort.or(default_reasoning_effort),
-                summary: if summary == ReasoningSummaryConfig::None {
+                summary: if summary == ReasoningSummaryConfig::None || !self.client.state.provider.is_openai() {
                     None
                 } else {
                     Some(summary)
@@ -566,7 +566,11 @@ impl ModelClientSession {
             instructions: instructions.clone(),
             input,
             tools,
-            tool_choice: "auto".to_string(),
+            tool_choice: if model_info.supports_tool_choice {
+                Some("auto".to_string())
+            } else {
+                None
+            },
             parallel_tool_calls: prompt.parallel_tool_calls,
             reasoning,
             store: provider.is_azure_responses_endpoint(),

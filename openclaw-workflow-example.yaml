@@ -1,0 +1,695 @@
+# OpenClaw 通用代码工程工作流示例
+# 这是一个完整的软件项目开发工作流，从需求到交付
+
+workflow:
+  name: "通用软件项目开发工作流"
+  version: "1.0.0"
+  description: "从需求分析到项目交付的完整软件开发工作流"
+  
+  # 项目元信息（从用户需求中提取）
+  project:
+    name: "${PROJECT_NAME}"  # 模板变量，从用户输入中获取
+    type: "${PROJECT_TYPE}"  # web, cli, library, api 等
+    language: "${LANGUAGE}"  # python, rust, typescript 等
+    description: "${PROJECT_DESCRIPTION}"
+
+  phases:
+    # ========== 阶段 1: 需求分析 ==========
+    - phase: "requirements_analysis"
+      description: "分析用户需求，明确项目目标和功能范围"
+      parallel: false
+      
+      tasks:
+        - id: "req_1"
+          name: "需求理解"
+          description: "深入理解用户提供的需求，提取关键信息"
+          prompt: |
+            请分析以下用户需求，并提取以下信息：
+            1. 项目类型和领域
+            2. 核心功能列表
+            3. 技术栈偏好（如果有）
+            4. 目标用户群体
+            5. 性能和质量要求
+            
+            用户需求：
+            ${USER_REQUIREMENT}
+            
+            请以结构化的方式输出分析结果。
+          inputs:
+            - name: "USER_REQUIREMENT"
+              type: "string"
+              required: true
+              description: "用户提供的原始需求描述"
+          outputs:
+            - name: "requirements_doc"
+              type: "file"
+              path: "docs/requirements.md"
+              description: "需求分析文档"
+          validation:
+            files:
+              - "docs/requirements.md"
+            checks:
+              - "requirements.md 应包含项目概述、功能列表、技术选型建议"
+        
+        - id: "req_2"
+          name: "技术选型"
+          description: "基于需求分析，确定合适的技术栈和工具"
+          dependencies: ["req_1"]
+          prompt: |
+            基于需求分析文档，为项目选择合适的技术栈：
+            1. 编程语言和版本
+            2. 框架和库
+            3. 开发工具
+            4. 测试框架
+            5. 构建和部署工具
+            
+            请考虑：
+            - 项目规模和复杂度
+            - 团队熟悉度
+            - 社区支持和生态
+            - 性能和可维护性
+            
+            输出技术选型文档。
+          outputs:
+            - name: "tech_stack_doc"
+              type: "file"
+              path: "docs/tech-stack.md"
+          validation:
+            files:
+              - "docs/tech-stack.md"
+      
+      validation:
+        files:
+          - "docs/requirements.md"
+          - "docs/tech-stack.md"
+        manual_review: true
+        review_prompt: "请确认需求分析和技术选型是否符合预期"
+      
+      next_phase: "project_planning"
+
+    # ========== 阶段 2: 项目规划 ==========
+    - phase: "project_planning"
+      description: "制定项目结构、架构设计和开发计划"
+      parallel: false
+      
+      tasks:
+        - id: "plan_1"
+          name: "项目结构设计"
+          description: "设计项目的目录结构和文件组织"
+          dependencies: ["req_1", "req_2"]
+          prompt: |
+            基于需求分析和技术选型，设计项目的目录结构：
+            1. 源代码组织方式
+            2. 配置文件位置
+            3. 测试文件组织
+            4. 文档目录
+            5. 资源文件管理
+            
+            项目类型：${PROJECT_TYPE}
+            技术栈：${LANGUAGE}
+            
+            输出项目结构设计文档，并创建基础目录结构。
+          outputs:
+            - name: "project_structure_doc"
+              type: "file"
+              path: "docs/project-structure.md"
+            - name: "directory_structure"
+              type: "directories"
+          validation:
+            files:
+              - "docs/project-structure.md"
+            commands:
+              - "test -d src || test -d lib || test -d app"
+        
+        - id: "plan_2"
+          name: "架构设计"
+          description: "设计系统架构和模块划分"
+          dependencies: ["plan_1"]
+          prompt: |
+            设计项目的系统架构：
+            1. 整体架构模式（MVC, 微服务, 分层等）
+            2. 核心模块划分
+            3. 模块间依赖关系
+            4. 数据流和接口设计
+            5. 关键设计决策
+            
+            输出架构设计文档，包含架构图和模块说明。
+          outputs:
+            - name: "architecture_doc"
+              type: "file"
+              path: "docs/architecture.md"
+          validation:
+            files:
+              - "docs/architecture.md"
+            checks:
+              - "architecture.md 应包含架构图和模块说明"
+        
+        - id: "plan_3"
+          name: "开发计划"
+          description: "制定开发里程碑和任务分解"
+          dependencies: ["plan_2"]
+          prompt: |
+            制定详细的开发计划：
+            1. 开发阶段划分
+            2. 每个阶段的功能目标
+            3. 任务优先级排序
+            4. 依赖关系识别
+            5. 里程碑定义
+            
+            输出开发计划文档。
+          outputs:
+            - name: "development_plan"
+              type: "file"
+              path: "docs/development-plan.md"
+          validation:
+            files:
+              - "docs/development-plan.md"
+      
+      validation:
+        files:
+          - "docs/project-structure.md"
+          - "docs/architecture.md"
+          - "docs/development-plan.md"
+        manual_review: true
+        review_prompt: "请确认项目规划和架构设计是否合理"
+      
+      next_phase: "project_initialization"
+
+    # ========== 阶段 3: 项目初始化 ==========
+    - phase: "project_initialization"
+      description: "初始化项目，创建基础文件和配置"
+      parallel: false
+      
+      tasks:
+        - id: "init_1"
+          name: "创建项目骨架"
+          description: "创建项目的基础目录和文件结构"
+          dependencies: ["plan_1"]
+          prompt: |
+            根据项目结构设计，创建完整的项目骨架：
+            1. 创建所有必要的目录
+            2. 创建基础源代码文件（入口文件、主要模块等）
+            3. 创建配置文件（package.json, Cargo.toml, requirements.txt 等）
+            4. 创建 .gitignore 文件
+            5. 创建 README.md 基础模板
+            
+            确保所有文件都有适当的基础内容。
+          tools:
+            - "shell"
+            - "write_file"
+          outputs:
+            - name: "project_skeleton"
+              type: "directories_and_files"
+          validation:
+            files:
+              - "README.md"
+              - ".gitignore"
+            commands:
+              - "test -f README.md"
+              - "test -f .gitignore"
+        
+        - id: "init_2"
+          name: "配置开发环境"
+          description: "配置开发工具、依赖管理和构建系统"
+          dependencies: ["init_1", "req_2"]
+          prompt: |
+            配置项目的开发环境：
+            1. 初始化包管理器（npm, cargo, pip 等）
+            2. 安装开发依赖（测试框架、代码检查工具等）
+            3. 配置构建脚本
+            4. 配置代码格式化工具
+            5. 创建开发环境设置说明
+            
+            技术栈：${LANGUAGE}
+          tools:
+            - "shell"
+          outputs:
+            - name: "package_config"
+              type: "file"
+              description: "包管理器配置文件"
+          validation:
+            commands:
+              - "test -f package.json || test -f Cargo.toml || test -f requirements.txt || test -f pyproject.toml"
+            checks:
+              - "包管理器配置文件应包含项目元信息和依赖"
+        
+        - id: "init_3"
+          name: "初始化版本控制"
+          description: "初始化 Git 仓库并创建初始提交"
+          dependencies: ["init_1"]
+          prompt: |
+            初始化 Git 版本控制：
+            1. 初始化 Git 仓库（如果还没有）
+            2. 创建 .gitignore 文件（如果还没有）
+            3. 创建初始提交
+            4. 设置合适的 .gitattributes（如果需要）
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "git status"
+            checks:
+              - "Git 仓库应已初始化"
+      
+      validation:
+        files:
+          - "README.md"
+          - ".gitignore"
+        commands:
+          - "git status"
+        manual_review: false
+      
+      next_phase: "core_implementation"
+
+    # ========== 阶段 4: 核心功能实现 ==========
+    - phase: "core_implementation"
+      description: "实现项目的核心功能模块"
+      parallel: false
+      
+      tasks:
+        - id: "impl_1"
+          name: "实现核心模块"
+          description: "根据架构设计，实现核心功能模块"
+          dependencies: ["plan_2", "init_1"]
+          prompt: |
+            根据架构设计文档，实现项目的核心功能模块：
+            1. 实现主要业务逻辑
+            2. 实现数据模型和接口
+            3. 实现核心服务层
+            4. 确保代码质量和最佳实践
+            5. 添加必要的注释和文档字符串
+            
+            参考文档：
+            - docs/architecture.md
+            - docs/requirements.md
+            
+            请确保代码：
+            - 遵循语言的最佳实践
+            - 有清晰的模块划分
+            - 包含适当的错误处理
+            - 有必要的类型注解或文档
+          tools:
+            - "write_file"
+            - "shell"
+          outputs:
+            - name: "core_code"
+              type: "code"
+              description: "核心功能代码"
+          validation:
+            commands:
+              - "test -d src || test -d lib || test -d app"
+            checks:
+              - "核心代码应实现主要功能"
+              - "代码应能通过语法检查"
+        
+        - id: "impl_2"
+          name: "实现辅助功能"
+          description: "实现配置管理、日志、工具函数等辅助功能"
+          dependencies: ["impl_1"]
+          prompt: |
+            实现项目的辅助功能模块：
+            1. 配置管理（环境变量、配置文件读取）
+            2. 日志系统
+            3. 工具函数和辅助类
+            4. 错误处理机制
+            5. 常量定义
+            
+            确保这些模块可以被核心模块使用。
+          tools:
+            - "write_file"
+          validation:
+            checks:
+              - "辅助功能应完整且可用"
+        
+        - id: "impl_3"
+          name: "实现用户接口"
+          description: "实现 CLI、API 或 UI 等用户接口"
+          dependencies: ["impl_1"]
+          prompt: |
+            根据项目类型，实现用户接口：
+            - CLI 项目：实现命令行参数解析和交互
+            - Web 项目：实现 API 路由或前端界面
+            - Library 项目：实现公共 API 接口
+            
+            确保接口：
+            - 易于使用
+            - 有清晰的错误提示
+            - 符合项目需求
+          tools:
+            - "write_file"
+          validation:
+            checks:
+              - "用户接口应完整实现"
+              - "接口应易于使用"
+      
+      validation:
+        commands:
+          - "test -f src/main.* || test -f lib/main.* || test -f app/main.*"
+        checks:
+          - "核心功能应已实现"
+          - "代码应能编译或通过语法检查"
+        manual_review: true
+        review_prompt: "请检查核心功能实现是否符合需求"
+      
+      next_phase: "testing"
+
+    # ========== 阶段 5: 测试 ==========
+    - phase: "testing"
+      description: "编写和运行测试，确保代码质量"
+      parallel: false
+      
+      tasks:
+        - id: "test_1"
+          name: "编写单元测试"
+          description: "为核心功能编写单元测试"
+          dependencies: ["impl_1"]
+          prompt: |
+            为核心功能模块编写全面的单元测试：
+            1. 测试所有公共函数和方法
+            2. 测试边界条件和错误情况
+            3. 确保测试覆盖率 > 80%
+            4. 使用合适的测试框架
+            5. 测试应清晰、可维护
+            
+            技术栈：${LANGUAGE}
+          tools:
+            - "write_file"
+          outputs:
+            - name: "unit_tests"
+              type: "code"
+              description: "单元测试代码"
+          validation:
+            files:
+              - "test/**/*.test.*"
+              - "tests/**/*.test.*"
+              - "**/*_test.*"
+            checks:
+              - "应包含单元测试文件"
+        
+        - id: "test_2"
+          name: "编写集成测试"
+          description: "编写集成测试验证模块协作"
+          dependencies: ["impl_3", "test_1"]
+          prompt: |
+            编写集成测试：
+            1. 测试模块间的集成
+            2. 测试端到端流程
+            3. 测试与外部服务的交互（如适用）
+            4. 确保集成测试稳定可靠
+          tools:
+            - "write_file"
+          validation:
+            checks:
+              - "应包含集成测试"
+        
+        - id: "test_3"
+          name: "运行测试套件"
+          description: "运行所有测试并修复失败用例"
+          dependencies: ["test_1", "test_2"]
+          prompt: |
+            运行完整的测试套件：
+            1. 执行所有单元测试
+            2. 执行所有集成测试
+            3. 修复所有失败的测试
+            4. 确保所有测试通过
+            5. 生成测试覆盖率报告（如果可能）
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "npm test || cargo test || pytest || python -m pytest"
+            checks:
+              - "所有测试应通过"
+              - "测试覆盖率应 > 80%"
+      
+      validation:
+        commands:
+          - "npm test || cargo test || pytest"
+        checks:
+          - "所有测试应通过"
+        manual_review: false
+      
+      next_phase: "documentation"
+
+    # ========== 阶段 6: 文档编写 ==========
+    - phase: "documentation"
+      description: "编写项目文档，包括 API 文档和使用指南"
+      parallel: false
+      
+      tasks:
+        - id: "doc_1"
+          name: "完善 README"
+          description: "编写完整的 README 文档"
+          dependencies: ["impl_3"]
+          prompt: |
+            编写完整的 README.md 文档，包含：
+            1. 项目简介和特性
+            2. 安装说明
+            3. 快速开始指南
+            4. 使用示例
+            5. API 文档链接
+            6. 贡献指南
+            7. 许可证信息
+            
+            确保文档清晰、完整、易于理解。
+          outputs:
+            - name: "readme"
+              type: "file"
+              path: "README.md"
+          validation:
+            files:
+              - "README.md"
+            checks:
+              - "README 应包含安装和使用说明"
+        
+        - id: "doc_2"
+          name: "编写 API 文档"
+          description: "为公共 API 编写详细文档"
+          dependencies: ["impl_1"]
+          prompt: |
+            编写 API 文档：
+            1. 所有公共函数和类的文档
+            2. 参数说明和返回值说明
+            3. 使用示例
+            4. 错误处理说明
+            
+            如果支持，生成 API 文档网站。
+          outputs:
+            - name: "api_docs"
+              type: "files"
+              description: "API 文档文件"
+          validation:
+            checks:
+              - "API 文档应完整"
+        
+        - id: "doc_3"
+          name: "编写使用指南"
+          description: "编写详细的使用指南和教程"
+          dependencies: ["doc_1"]
+          prompt: |
+            编写使用指南：
+            1. 详细的使用说明
+            2. 常见用例示例
+            3. 最佳实践
+            4. 故障排除指南
+            5. FAQ
+            
+            输出到 docs/ 目录。
+          outputs:
+            - name: "user_guide"
+              type: "file"
+              path: "docs/user-guide.md"
+          validation:
+            files:
+              - "docs/user-guide.md"
+      
+      validation:
+        files:
+          - "README.md"
+        checks:
+          - "文档应完整且清晰"
+        manual_review: true
+        review_prompt: "请检查文档是否完整和准确"
+      
+      next_phase: "quality_assurance"
+
+    # ========== 阶段 7: 质量保证 ==========
+    - phase: "quality_assurance"
+      description: "代码质量检查、性能优化和最终验证"
+      parallel: false
+      
+      tasks:
+        - id: "qa_1"
+          name: "代码质量检查"
+          description: "运行代码检查工具，修复问题"
+          dependencies: ["impl_1"]
+          prompt: |
+            进行代码质量检查：
+            1. 运行 linter（eslint, clippy, pylint 等）
+            2. 运行代码格式化工具
+            3. 修复所有警告和错误
+            4. 确保代码风格一致
+            5. 检查代码复杂度
+            
+            技术栈：${LANGUAGE}
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "npm run lint || cargo clippy || pylint || true"
+            checks:
+              - "代码应通过 linter 检查"
+        
+        - id: "qa_2"
+          name: "性能优化"
+          description: "识别和优化性能瓶颈"
+          dependencies: ["test_3"]
+          prompt: |
+            进行性能分析和优化：
+            1. 识别性能瓶颈
+            2. 优化关键路径
+            3. 优化资源使用
+            4. 确保性能满足需求
+            
+            如果项目有明确的性能要求，进行性能测试。
+          validation:
+            checks:
+              - "性能应满足需求"
+        
+        - id: "qa_3"
+          name: "安全审查"
+          description: "检查安全漏洞和最佳实践"
+          dependencies: ["impl_1"]
+          prompt: |
+            进行安全审查：
+            1. 检查常见安全漏洞
+            2. 验证输入验证
+            3. 检查依赖项安全
+            4. 确保遵循安全最佳实践
+            
+            如果发现安全问题，修复它们。
+          tools:
+            - "shell"
+          validation:
+            commands:
+              - "npm audit || cargo audit || safety check || true"
+            checks:
+              - "应无严重安全问题"
+        
+        - id: "qa_4"
+          name: "最终验证"
+          description: "全面验证项目完整性和可用性"
+          dependencies: ["qa_1", "qa_2", "qa_3"]
+          prompt: |
+            进行最终验证：
+            1. 验证所有功能正常工作
+            2. 验证所有测试通过
+            3. 验证文档完整
+            4. 验证项目可以正常构建和运行
+            5. 生成项目总结报告
+            
+            输出验证报告。
+          outputs:
+            - name: "verification_report"
+              type: "file"
+              path: "docs/verification-report.md"
+          validation:
+            files:
+              - "docs/verification-report.md"
+            commands:
+              - "npm run build || cargo build || python setup.py build || true"
+            checks:
+              - "项目应能正常构建"
+              - "所有功能应正常工作"
+      
+      validation:
+        files:
+          - "docs/verification-report.md"
+        manual_review: true
+        review_prompt: "请最终确认项目质量和完整性"
+      
+      next_phase: "deployment_preparation"
+
+    # ========== 阶段 8: 部署准备 ==========
+    - phase: "deployment_preparation"
+      description: "准备项目部署和发布"
+      parallel: false
+      
+      tasks:
+        - id: "deploy_1"
+          name: "构建配置"
+          description: "配置生产环境构建"
+          dependencies: ["qa_4"]
+          prompt: |
+            配置生产环境构建：
+            1. 创建生产构建脚本
+            2. 配置环境变量
+            3. 优化构建输出
+            4. 创建部署清单
+            
+            确保项目可以正确构建用于生产环境。
+          tools:
+            - "write_file"
+          validation:
+            commands:
+              - "npm run build:prod || cargo build --release || true"
+            checks:
+              - "生产构建应成功"
+        
+        - id: "deploy_2"
+          name: "部署文档"
+          description: "编写部署和运维文档"
+          dependencies: ["deploy_1"]
+          prompt: |
+            编写部署文档：
+            1. 部署步骤说明
+            2. 环境要求
+            3. 配置说明
+            4. 监控和日志
+            5. 故障排除
+            
+            输出到 docs/deployment.md。
+          outputs:
+            - name: "deployment_doc"
+              type: "file"
+              path: "docs/deployment.md"
+          validation:
+            files:
+              - "docs/deployment.md"
+        
+        - id: "deploy_3"
+          name: "版本发布"
+          description: "准备版本发布信息"
+          dependencies: ["deploy_2"]
+          prompt: |
+            准备版本发布：
+            1. 确定版本号
+            2. 编写 CHANGELOG
+            3. 创建 Git 标签（如果需要）
+            4. 准备发布说明
+            
+            输出 CHANGELOG.md。
+          outputs:
+            - name: "changelog"
+              type: "file"
+              path: "CHANGELOG.md"
+          validation:
+            files:
+              - "CHANGELOG.md"
+      
+      validation:
+        files:
+          - "docs/deployment.md"
+          - "CHANGELOG.md"
+        manual_review: true
+        review_prompt: "请确认项目已准备好部署"
+      
+      next_phase: null  # 工作流结束
+
+  # 工作流级别的配置
+  config:
+    max_retries: 3              # 每个任务最大重试次数
+    retry_delay: 5              # 重试延迟（秒）
+    allow_manual_intervention: true  # 允许人工介入
+    save_checkpoints: true      # 保存检查点以便恢复
+    checkpoint_dir: ".openclaw/checkpoints"  # 检查点目录

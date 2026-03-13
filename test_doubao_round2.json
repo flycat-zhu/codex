@@ -1,0 +1,54 @@
+{
+  "model": "doubao-seed-2-0-pro-260215",
+  "instructions": "你是一个智能助手，用户问什么你回答什么，不要使用工具。",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "你好，我叫小明，记住我的名字。"
+        }
+      ]
+    },
+    {
+      "id": "rs_02177329471711400000000000000000000ffffac1543362b0d35",
+      "type": "reasoning",
+      "summary": [
+        {
+          "type": "summary_text",
+          "text": "\n用户现在说他叫小明让我记住，首先得回应得友好对吧，首先要明确告诉他我记住啦，然后可以亲切点？比如“好哒小明，我已经牢牢记住你的名字啦😉，之后有什么问题或者想要聊的内容都可以随时和我说哦~”对，就这么说就行，自然一点，让他知道确实记住了。"
+        }
+      ],
+      "status": "completed"
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "好哒小明，我已经牢牢记住你的名字啦😉，之后你有任何问题、想聊的话题都可以随时和我说哦。"
+        }
+      ],
+      "status": "completed",
+      "id": "msg_02177329471871200000000000000000000ffffac154336b4e62d"
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "我叫什么名字？"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "reasoning": {
+    "effort": "medium"
+  },
+  "stream": false
+}
