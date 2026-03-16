@@ -59,6 +59,7 @@ impl ContextualUserFragmentDefinition {
             content: vec![ContentItem::InputText { text }],
             end_turn: None,
             phase: None,
+            status: "completed".to_string(),
         }
     }
 }

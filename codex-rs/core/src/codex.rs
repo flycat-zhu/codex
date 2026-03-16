@@ -2844,6 +2844,7 @@ impl Session {
             }],
             end_turn: None,
             phase: None,
+            status: "completed".to_string(),
         };
 
         self.record_conversation_items(ctx, &[item]).await;

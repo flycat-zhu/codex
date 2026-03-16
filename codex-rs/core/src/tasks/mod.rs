@@ -287,6 +287,7 @@ impl Session {
                     ),
                 }],
                 end_turn: None,
+                status: "completed".to_string(),
                 phase: None,
             };
             self.record_into_history(std::slice::from_ref(&marker), task.turn_context.as_ref())

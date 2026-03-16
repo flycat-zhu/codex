@@ -302,6 +302,7 @@ mod job {
                         &rollout_contents,
                     )?,
                 }],
+                status: "completed".to_string(),
                 end_turn: None,
                 phase: None,
             }],

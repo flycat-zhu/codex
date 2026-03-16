@@ -368,6 +368,7 @@ fn build_compacted_history_with_limit(
             }],
             end_turn: None,
             phase: None,
+            status: "completed".to_string(),
         });
     }
 
@@ -383,6 +384,7 @@ fn build_compacted_history_with_limit(
         content: vec![ContentItem::InputText { text: summary_text }],
         end_turn: None,
         phase: None,
+        status: "completed".to_string(),
     });
 
     history
