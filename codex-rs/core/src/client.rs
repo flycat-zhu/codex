@@ -65,7 +65,6 @@ use codex_otel::OtelManager;
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
 use codex_protocol::config_types::Verbosity as VerbosityConfig;
-use codex_protocol::models::ResponseItem;
 use codex_protocol::openai_models::ModelInfo;
 use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
 use codex_protocol::protocol::SessionSource;
@@ -526,7 +525,7 @@ impl ModelClientSession {
         let mut input = prompt.get_formatted_input();
         // Volcengine/Doubao does not support ContentItems array for function call outputs,
         // convert all content items to plain text for compatibility
-        if provider.name() == "volcengine" {
+        if provider.base_url.contains("volces.com") {
             input.iter_mut().for_each(|item| match item {
                 ResponseItem::FunctionCallOutput { output, .. } => {
                     if let FunctionCallOutputBody::ContentItems(items) = &output.body {
