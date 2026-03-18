@@ -108,12 +108,14 @@
 ### 问题 8：工具调用（如图生成/查看）后多轮对话 `input` 参数类型不匹配报错
 - **错误信息**：`{"error":{"code":"InvalidParameter","message":"The parameter `input` specified in the request are not valid: `Mismatch type string with value array`"}}`
 - **根因**：
-  1. `doubao-seed-2-0-pro-260215` 模型元数据配置缺失，Codex 使用 fallback 默认格式（OpenAI 风格对话数组）发送请求
-  2. 调用工具（如 `view_image`、图片生成类工具）后，对话历史新增工具返回结果条目，豆包 API 对此类结构化内容的格式要求与 OpenAI 存在差异，导致类型校验失败
+  1. 豆包Responses API不支持工具调用返回结果使用`ContentItems`数组格式，仅接受纯文本格式的工具返回值
+  2. 调用工具（如 `view_image`、图片生成类工具）后，工具返回结果以`ContentItems`结构化数组形式存入对话历史，下一轮请求发送给豆包时触发类型校验失败
 - **修复方案**：
-  1. 在 Codex 模型库/配置中补充 `doubao-seed-2-0-pro-260215` 完整元数据，指定其请求序列化格式适配豆包规范
-  2. 调整 volcengine provider 工具返回结果的序列化逻辑，将工具调用结果格式化为豆包 API 可识别的结构
-- **状态**：🔧 定位完成，修复中
+  1. 在`build_responses_request`方法中新增volcengine provider检测逻辑
+  2. 当provider为豆包时，自动将所有`FunctionCallOutput`和`CustomToolCallOutput`中的`ContentItems`数组转换为纯文本格式
+  3. 不影响OpenAI等其他provider的原有行为，完全兼容豆包参数格式要求
+- **修复提交**：`5b838344d fix(doubao): convert function call output ContentItems to plain text for volcengine provider`
+- **状态**：✅ 已修复，包含在`codex:4.7`及后续版本镜像中
 
 ---
 
@@ -130,6 +132,7 @@
 | 2026-03-12 13:55 | 4.5版本多轮对话完整测试 | `4.5` | ✅ 测试通过！单轮/多轮对话均正常，status字段问题已修复，推理功能正常 |
 | 2026-03-12 15:20 | 修复reasoning.summary字段不兼容问题 | `4.6` | 🔧 构建中 |
 | 2026-03-17 14:15 | 定位工具调用后多轮对话input参数类型不兼容问题 | `4.7` | 🔧 修复中 |
+| 2026-03-18 17:30 | 修复工具调用后多轮对话input参数类型不兼容问题，完成所有豆包适配修复 | `4.7` | ✅ 修复完成，所有8个兼容性问题已全部解决 |
 
 ---
 
