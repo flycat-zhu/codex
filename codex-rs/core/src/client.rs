@@ -48,6 +48,7 @@ use codex_api::ResponseCreateWsRequest;
 use codex_api::ResponsesApiRequest;
 use codex_api::ResponsesClient as ApiResponsesClient;
 use codex_api::ResponsesOptions as ApiResponsesOptions;
+use codex_protocol::models::{ResponseItem, FunctionCallOutputBody, function_call_output_content_items_to_text};
 use codex_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
 use codex_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
 use codex_api::SseTelemetry;
@@ -522,7 +523,28 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
     ) -> Result<ResponsesApiRequest> {
         let instructions = &prompt.base_instructions.text;
-        let input = prompt.get_formatted_input();
+        let mut input = prompt.get_formatted_input();
+        // Volcengine/Doubao does not support ContentItems array for function call outputs,
+        // convert all content items to plain text for compatibility
+        if provider.name() == "volcengine" {
+            input.iter_mut().for_each(|item| match item {
+                ResponseItem::FunctionCallOutput { output, .. } => {
+                    if let FunctionCallOutputBody::ContentItems(items) = &output.body {
+                        if let Some(text) = function_call_output_content_items_to_text(items) {
+                            output.body = FunctionCallOutputBody::Text(text);
+                        }
+                    }
+                }
+                ResponseItem::CustomToolCallOutput { output, .. } => {
+                    if let FunctionCallOutputBody::ContentItems(items) = &output.body {
+                        if let Some(text) = function_call_output_content_items_to_text(items) {
+                            output.body = FunctionCallOutputBody::Text(text);
+                        }
+                    }
+                }
+                _ => {}
+            });
+        }
         let tools = create_tools_json_for_responses_api(&prompt.tools)?;
         let default_reasoning_effort = model_info.default_reasoning_level;
         let reasoning = if model_info.supports_reasoning_summaries {
