@@ -3,6 +3,7 @@
 model_provider = "volcengine"
 model = "doubao-seed-2-0-pro-260215"
 web_search = "disabled"
+project_root_markers = [".codex-root"]
 
 # ========== 火山引擎 Provider 定义 ==========
 [model_providers.volcengine]

@@ -105,6 +105,18 @@
 
 ---
 
+### 问题 8：工具调用（如图生成/查看）后多轮对话 `input` 参数类型不匹配报错
+- **错误信息**：`{"error":{"code":"InvalidParameter","message":"The parameter `input` specified in the request are not valid: `Mismatch type string with value array`"}}`
+- **根因**：
+  1. `doubao-seed-2-0-pro-260215` 模型元数据配置缺失，Codex 使用 fallback 默认格式（OpenAI 风格对话数组）发送请求
+  2. 调用工具（如 `view_image`、图片生成类工具）后，对话历史新增工具返回结果条目，豆包 API 对此类结构化内容的格式要求与 OpenAI 存在差异，导致类型校验失败
+- **修复方案**：
+  1. 在 Codex 模型库/配置中补充 `doubao-seed-2-0-pro-260215` 完整元数据，指定其请求序列化格式适配豆包规范
+  2. 调整 volcengine provider 工具返回结果的序列化逻辑，将工具调用结果格式化为豆包 API 可识别的结构
+- **状态**：🔧 定位完成，修复中
+
+---
+
 ## 构建与测试历史
 
 | 时间 | 操作 | 镜像 tag | 结果 |
@@ -117,6 +129,7 @@
 | 2026-03-11 13:3x | Reasoning 缺失 status 字段修复 | `4.5` | ✅ 已构建完成，待测试 |
 | 2026-03-12 13:55 | 4.5版本多轮对话完整测试 | `4.5` | ✅ 测试通过！单轮/多轮对话均正常，status字段问题已修复，推理功能正常 |
 | 2026-03-12 15:20 | 修复reasoning.summary字段不兼容问题 | `4.6` | 🔧 构建中 |
+| 2026-03-17 14:15 | 定位工具调用后多轮对话input参数类型不兼容问题 | `4.7` | 🔧 修复中 |
 
 ---
 

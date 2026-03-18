@@ -49,6 +49,7 @@ CHANGELOG.md
 LICENSE
 NOTICE
 AGENTS.md
+!skills/**/*.md
 
 # Configuration files (keep essential ones)
 .env

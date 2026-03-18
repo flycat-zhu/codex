@@ -1,3 +1,0 @@
-interface:
-  display_name: "需求管理者"
-  short_description: "先读取TAPD已登记需求，再由AI完成评估、排期建议与后续交接文档"
