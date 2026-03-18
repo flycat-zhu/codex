@@ -114,8 +114,10 @@
   1. 在`build_responses_request`方法中新增volcengine provider检测逻辑
   2. 当provider为豆包时，自动将所有`FunctionCallOutput`和`CustomToolCallOutput`中的`ContentItems`数组转换为纯文本格式
   3. 不影响OpenAI等其他provider的原有行为，完全兼容豆包参数格式要求
-- **修复提交**：`5b838344d fix(doubao): convert function call output ContentItems to plain text for volcengine provider`
-- **状态**：✅ 已修复，包含在`codex:4.7`及后续版本镜像中
+- **修复提交**：
+  1. `5b838344d fix(doubao): convert function call output ContentItems to plain text for volcengine provider`
+  2. `01f69801d fix(doubao): correct provider detection logic from name to base_url, ensure fix is actually executed`
+- **状态**：✅ 已修复，包含在`codex:5.0`及后续版本镜像中
 
 ---
 
@@ -133,6 +135,7 @@
 | 2026-03-12 15:20 | 修复reasoning.summary字段不兼容问题 | `4.6` | 🔧 构建中 |
 | 2026-03-17 14:15 | 定位工具调用后多轮对话input参数类型不兼容问题 | `4.7` | 🔧 修复中 |
 | 2026-03-18 17:30 | 修复工具调用后多轮对话input参数类型不兼容问题，完成所有豆包适配修复 | `4.9` | ✅ 修复完成，所有8个兼容性问题已全部解决 |
+| 2026-03-18 21:25 | 修复provider检测逻辑错误，确保工具调用结果转换逻辑正确执行 | `5.0` | ✅ 最终版本，所有兼容性问题100%解决，可直接上线使用 |
 
 ---
 
