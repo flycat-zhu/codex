@@ -121,6 +121,46 @@
 
 ---
 
+### 问题 9：重启会话后第一轮对话报错 `missing input.status parameter`
+- **错误信息**：`{"error":{"code":"MissingParameter","message":"missing input.status parameter"}}`
+- **根因**：
+  1. 旧版本历史记录中存储的`function_call`和`reasoning`类型的会话item没有`status`字段（该字段是在修复问题4、5时新增的）
+  2. 重启会话时，后端从数据库加载历史记录并传给Codex，Codex将这些历史记录放入`input`参数发送给豆包时，豆包要求所有非message类型的item必须携带`status`字段，导致报错
+- **修复方案**：
+  1. 在后端`CodexOrchestratorService.normalizeHistoryItem()`方法中新增历史记录规范化逻辑
+  2. 对缺少`status`字段的`function_call`和`reasoning`类型的item，自动补充默认值`"completed"`
+  3. 兼容新旧历史记录，不影响其他provider行为
+- **修复提交**：
+  1. 后端：`LinkMed/backend` commit 补充历史记录status字段逻辑
+- **状态**：✅ 已修复，包含在后端最新版本中
+
+---
+
+### 问题 10：重启会话后报错 `json: unknown field "phase"`
+- **错误信息**：`{"error":{"code":"InvalidParameter","message":"The parameter `input` specified in the request are not valid: `json: unknown field \"phase\"`"}`
+- **根因**：
+  1. Codex内部协议要求assistant类型的message携带`phase`字段，用来标识消息阶段（如`final_answer`）
+  2. 豆包Responses API不识别该内部字段，当Codex把带`phase`字段的历史记录发送给豆包时，触发参数校验错误
+- **修复方案**：
+  1. 在Codex`build_responses_request()`方法中新增豆包兼容性逻辑
+  2. 当provider为豆包时，自动过滤assistant message中的`phase`字段，不发送给豆包API
+  3. 不影响OpenAI等其他provider的原有行为，内部逻辑依然保留phase字段
+- **修复提交**：
+  1. Codex：`8a7d2f44 fix(doubao): filter out phase field from assistant message for volcengine provider`
+- **状态**：✅ 已修复，包含在`codex:5.1`及后续版本镜像中
+
+---
+
+## 🎯 验证结果（2026-03-23）
+所有场景已验证正常工作：
+1. ✅ 基础文本对话
+2. ✅ 图片生成能力
+3. ✅ 图片生成后多轮对话
+4. ✅ 重启会话后继续对话
+5. ✅ 历史会话加载无参数错误
+
+---
+
 ## 构建与测试历史
 
 | 时间 | 操作 | 镜像 tag | 结果 |
@@ -136,6 +176,7 @@
 | 2026-03-17 14:15 | 定位工具调用后多轮对话input参数类型不兼容问题 | `4.7` | 🔧 修复中 |
 | 2026-03-18 17:30 | 修复工具调用后多轮对话input参数类型不兼容问题，完成所有豆包适配修复 | `4.9` | ✅ 修复完成，所有8个兼容性问题已全部解决 |
 | 2026-03-18 21:25 | 修复provider检测逻辑错误，确保工具调用结果转换逻辑正确执行 | `5.0` | ✅ 最终版本，所有兼容性问题100%解决，可直接上线使用 |
+| 2026-03-23 11:20 | 修复assistant message phase字段不兼容问题 + 后端历史记录规范化逻辑优化 + 全场景联调验证 | `5.1` | ✅ 构建成功，所有场景测试通过（文本对话/图片生成/多轮交互/重启会话均正常）|
 
 ---
 

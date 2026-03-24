@@ -541,6 +541,10 @@ impl ModelClientSession {
                         }
                     }
                 }
+                ResponseItem::Message { role, phase, .. } if role == "assistant" => {
+                    // 豆包API不支持assistant message中的phase字段，过滤掉该内部字段
+                    *phase = None;
+                }
                 _ => {}
             });
         }
