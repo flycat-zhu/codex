@@ -21,13 +21,8 @@ support_verbosity = false
 supports_parallel_tool_calls = false
 prefer_websockets = false
 
-# ========== PaddleOCR MCP Server ==========
-[mcp_servers.paddleocr]
-command = "paddleocr_mcp"
-args = ["--pipeline", "OCR", "--ppocr_source", "local"]
-env = {}
-
 # ========== Shell 环境策略 ==========
 [shell_environment_policy]
 inherit = "all"
 ignore_default_excludes = true
+set = { VIRTUAL_ENV = "/home/codex/.venv", PATH = "/home/codex/.venv/bin:/usr/local/bin:/usr/bin:/bin" }

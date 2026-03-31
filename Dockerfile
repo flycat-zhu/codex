@@ -84,7 +84,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM debian:bookworm-slim
 
 # 配置清华 Debian 源并安装运行时依赖
-# ⚠️ 移除了 texlive-xetex / texlive-fonts-recommended / texlive-latex-base（约 400-600MB，节省数分钟安装时间）
+# 含 texlive-xetex 等：供 pandoc / literature-review generate_pdf（--pdf-engine=xelatex）将 Markdown 转为 PDF
 RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
     echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
     echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
@@ -92,7 +92,11 @@ RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib 
     apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl git \
         python3 python3-venv python3-pip \
-        libssl3 qpdf pandoc && \
+        libssl3 qpdf pandoc \
+        texlive-xetex texlive-fonts-recommended texlive-lang-chinese \
+        poppler-utils \
+        libreoffice-writer libreoffice-impress libreoffice-calc \
+        fontconfig fonts-noto-cjk fonts-wqy-zenhei && \
     rm -rf /var/lib/apt/lists/*
 
 # 国内 pip 源（系统级）
@@ -127,6 +131,14 @@ ENV VENV=/home/codex/.venv
 RUN python3 -m venv "$VENV" && "$VENV/bin/pip" install -U pip setuptools wheel
 ENV VIRTUAL_ENV="$VENV" \
     PATH="$VENV/bin:/usr/local/bin:/usr/bin:/bin"
+
+# Matplotlib 全局中文：无需每段脚本写 rcParams（与镜像内 fonts-noto-cjk / fonts-wqy-zenhei 配合）
+RUN mkdir -p /home/codex/.config/matplotlib && \
+    printf '%s\n' \
+        'font.family: sans-serif' \
+        'font.sans-serif: WenQuanYi Zen Hei, Noto Sans CJK JP, DejaVu Sans' \
+        'axes.unicode_minus: False' \
+        > /home/codex/.config/matplotlib/matplotlibrc
 
 # 预装基础 Python 依赖（cache mount uid 与 codex 用户 10001 一致）
 COPY --chown=codex:codex requirements.txt /tmp/requirements.txt

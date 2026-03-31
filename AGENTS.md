@@ -29,7 +29,7 @@
 **标准流程**（必须严格遵循）：
 
 ```python
-python3 -c "from PyPDF2 import PdfReader; reader = PdfReader('文件完整绝对路径'); text = ''.join(page.extract_text() for page in reader.pages); print(text)"
+python3 -c "from pypdf import PdfReader; reader = PdfReader('文件完整绝对路径'); text = ''.join(page.extract_text() for page in reader.pages); print(text)"
 ```
 
 **重要规则**：
@@ -45,7 +45,7 @@ python3 -c "from PyPDF2 import PdfReader; reader = PdfReader('文件完整绝对
 用户："读取 research.pdf 并总结"
 
 你应该执行：
-shell {"command": ["python3", "-c", "from PyPDF2 import PdfReader; reader = PdfReader('/Users/hannah/Downloads/同步空间/research.pdf'); print(''.join(p.extract_text() for p in reader.pages))"]}
+shell {"command": ["python3", "-c", "from pypdf import PdfReader; reader = PdfReader('/Users/hannah/Downloads/同步空间/research.pdf'); print(''.join(p.extract_text() for p in reader.pages))"]}
 ```
 
 ---
@@ -78,99 +78,23 @@ python3 -c "import pandas as pd; df = pd.read_csv('文件完整绝对路径'); p
 
 ---
 
-## 第二部分：数据可视化（Matplotlib）
+## 第二部分：数据可视化（与内置 Skills 对齐）
 
-**⚠️ 重要规则：禁止回显文件路径**
+**路径与输出表述**：与文档开头的「禁止回显文件路径」一致；图表保存成功时仅用「柱状图已保存」「热图已保存」等状态语，**不**在 print 或回复中写出完整保存路径。
 
-生成图表后，**严格禁止**在用户可见的输出中显示文件保存路径：
+**实现方式**：
 
-- ❌ 禁止在 print 语句中输出完整路径
-- ❌ 禁止在回复中提及文件路径
-- ✅ 只显示状态信息（如 "柱状图已保存" 或 "折线图已保存"）
+- 图表类型、代码示例、发表级规范（dpi、版式、配色等）以 **Codex 内置技能**为准，任务相关时先阅读对应 `SKILL.md` 再写代码：
+  - **`matplotlib`**：底层定制、多面板、导出 PDF/PNG/SVG
+  - **`seaborn`**：统计图、分布、分类对比、热图等
+  - **`scientific-visualization`**：期刊投稿级版式与导出约定
+  - **`statsmodels`**：需与回归/检验/推断表配套的定量分析时再配合作图
+  - **`plotly`**：需要交互探索（缩放、悬停）时
+- **读数据 + 绘图的完整流程**若代码较长，须遵守下文「规则一」：**超过约 400 字符时不要强行使用 `python3 -c`**，应写入独立 `.py` 再执行；短命令仍可用 `python3 -c`，文件路径优先用 **sys.argv**（见规则二）。
 
----
+**任务关键词（供路由，细节见各 Skill）**：组间对比/柱状、趋势/折线、相关与散点、分布/箱线、相关性热图等。
 
-### 2.1 柱状图（Bar Chart）
-
-**识别关键词**：柱状图、bar chart、组间对比、比较治疗效果
-
-**使用场景**：
-
-- 治疗组 vs 对照组
-- 不同剂量效果对比
-- 多个指标的组间比较
-
-**代码模板**：
-
-```python
-python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import matplotlib; import os; matplotlib.use('Agg'); session_id = os.path.basename(os.getcwd()); output_dir = f'/work/{session_id}/output'; os.makedirs(output_dir, exist_ok=True); df = pd.read_excel('数据路径'); df.groupby('分组列名')['数值列名'].mean().plot(kind='bar', figsize=(10,6), color=['#4472C4', '#ED7D31']); plt.title('组间对比', fontsize=14); plt.xlabel('组别', fontsize=12); plt.ylabel('数值', fontsize=12); plt.xticks(rotation=45); plt.grid(axis='y', alpha=0.3); plt.tight_layout(); output_path = f'{output_dir}/output_bar.png'; plt.savefig(output_path, dpi=300, bbox_inches='tight'); print('柱状图已保存')"
-```
-
-**注意事项**：
-
-- 需要根据实际数据调整列名
-- 可以自定义颜色
-- dpi=300（适合论文发表）
-
----
-
-### 2.2 折线图（Line Chart）
-
-**识别关键词**：折线图、line chart、趋势、时间变化、随访
-
-**使用场景**：
-
-- 随访期间的指标变化
-- 药物浓度-时间曲线
-- 治疗后症状改善趋势
-
-**代码模板**：
-
-```python
-python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import matplotlib; import os; matplotlib.use('Agg'); session_id = os.path.basename(os.getcwd()); output_dir = f'/work/{session_id}/output'; os.makedirs(output_dir, exist_ok=True); df = pd.read_excel('数据路径'); plt.figure(figsize=(10,6)); for group in df['分组列'].unique(): data = df[df['分组列'] == group]; plt.plot(data['时间列'], data['数值列'], marker='o', linewidth=2, label=group); plt.title('时间趋势分析', fontsize=14); plt.xlabel('时间', fontsize=12); plt.ylabel('数值', fontsize=12); plt.legend(fontsize=10); plt.grid(True, alpha=0.3); plt.tight_layout(); output_path = f'{output_dir}/output_line.png'; plt.savefig(output_path, dpi=300); print('折线图已保存')"
-```
-
----
-
-### 2.3 散点图（Scatter Plot）+ 相关性分析
-
-**识别关键词**：散点图、scatter、相关性、correlation
-
-**使用场景**：
-
-- BMI vs 血糖水平
-- 药物浓度 vs 疗效
-- 两个生物标志物的关系
-
-**代码模板**：
-
-```python
-python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import numpy as np; from scipy import stats; import matplotlib; import os; matplotlib.use('Agg'); session_id = os.path.basename(os.getcwd()); output_dir = f'/work/{session_id}/output'; os.makedirs(output_dir, exist_ok=True); df = pd.read_excel('数据路径'); x = df['X变量']; y = df['Y变量']; plt.figure(figsize=(10,6)); plt.scatter(x, y, alpha=0.6, s=80, edgecolors='black', linewidth=0.5); z = np.polyfit(x, y, 1); p = np.poly1d(z); plt.plot(x, p(x), 'r--', linewidth=2, label='回归线'); r, pval = stats.pearsonr(x, y); plt.text(0.05, 0.95, f'r={r:.3f}, p={pval:.4f}', transform=plt.gca().transAxes, fontsize=12, bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5)); plt.title('相关性分析', fontsize=14); plt.xlabel('X 变量', fontsize=12); plt.ylabel('Y 变量', fontsize=12); plt.legend(); plt.grid(True, alpha=0.3); plt.tight_layout(); output_path = f'{output_dir}/output_scatter.png'; plt.savefig(output_path, dpi=300); print(f'散点图已保存，相关系数 r={r:.3f}, p={pval:.4f}')"
-```
-
----
-
-### 2.4 箱线图（Box Plot）
-
-**识别关键词**：箱线图、box plot、分布、四分位数
-
-**代码模板**：
-
-```python
-python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import matplotlib; import os; matplotlib.use('Agg'); session_id = os.path.basename(os.getcwd()); output_dir = f'/work/{session_id}/output'; os.makedirs(output_dir, exist_ok=True); df = pd.read_excel('数据路径'); plt.figure(figsize=(10,6)); df.boxplot(column='数值列', by='分组列', figsize=(10,6), grid=False); plt.suptitle(''); plt.title('组间分布比较', fontsize=14); plt.xlabel('组别', fontsize=12); plt.ylabel('数值', fontsize=12); plt.tight_layout(); output_path = f'{output_dir}/output_box.png'; plt.savefig(output_path, dpi=300); print('箱线图已保存')"
-```
-
----
-
-### 2.5 热图（Heatmap）- 相关性矩阵
-
-**识别关键词**：热图、heatmap、相关性矩阵
-
-**代码模板**：
-
-```python
-python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import seaborn as sns; import matplotlib; import os; matplotlib.use('Agg'); session_id = os.path.basename(os.getcwd()); output_dir = f'/work/{session_id}/output'; os.makedirs(output_dir, exist_ok=True); df = pd.read_excel('数据路径'); corr = df.corr(); plt.figure(figsize=(12,10)); sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', center=0, square=True, linewidths=1, cbar_kws={'shrink': 0.8}); plt.title('变量相关性热图', fontsize=14); plt.tight_layout(); output_path = f'{output_dir}/output_heatmap.png'; plt.savefig(output_path, dpi=300); print('热图已保存')"
-```
+**与第三部分的分工**：**有数据、可复现的统计图**走本部分与上述技能；**无数据的概念示意、机制图、流程图**走第三部分豆包 Seedream（见 §3.1 / 第四部分路由）。
 
 ---
 
@@ -209,6 +133,11 @@ python3 -c "import pandas as pd; import matplotlib.pyplot as plt; import seaborn
 
 - ✅ 概念性的、描述性的需求 → 豆包 Seedream
 - ❌ 基于具体数据的图表 → Matplotlib
+
+**Codex 镜像与技能路由（与内置 skills 一致）**：
+
+- **学术类、数据驱动**：统计图、组间比较、检验/回归结果可视化、期刊多面板图等，使用 **Matplotlib、Seaborn**，需要严谨推断与表格化输出时配合 **statsmodels**，版式与导出规范参考 **scientific-visualization**。此类输出**不通过**豆包文生图生成。
+- **创意类、概念类**：无结构化数据、仅文字描述的示意图、机制图、流程图、Graphical Abstract（概念图）等，使用 **豆包 Seedream**（本节下文预置脚本）。若上游技能文档提及 OpenRouter 等外部「AI 示意图」脚本，**本产品线不默认采用**，以豆包与本地绘图栈为准。
 
 ---
 
@@ -400,7 +329,7 @@ python3 /.scripts/generate_image_doubao.py "创建学术论文 Graphical Abstrac
 
 1. 图表类型和用途
 2. 关键发现（如果是数据图）
-3. 使用的工具（Matplotlib 或豆包 Seedream）
+3. 使用的工具（如 Matplotlib/Seaborn 等内置技能，或豆包 Seedream）
 
 **⚠️ 严格禁止**：
 
@@ -439,7 +368,7 @@ python3 /.scripts/generate_image_doubao.py "创建学术论文 Graphical Abstrac
 
 **解决**：
 
-- 假设环境已有：pandas, matplotlib, seaborn, PyPDF2
+- 假设环境已有：pandas, matplotlib, seaborn, numpy, plotly, statsmodels（按需）, pypdf
 - 如果缺少，建议用户安装：`pip3 install 包名`
 
 ### 问题 4：图像生成失败
@@ -471,7 +400,7 @@ python3 /.scripts/generate_image_doubao.py "创建学术论文 Graphical Abstrac
   （基于读取的内容分析）
 
 第 3 步：绘制柱状图
-  （使用 Matplotlib 模板，填入正确的列名）
+  （按内置 matplotlib / seaborn 等 skill 编写脚本或短命令，填入正确列名；逻辑较长时用独立 .py，遵守规则一）
 
 第 4 步：总结
   "数据显示治疗组的平均疗效为 85.3%，对照组为 65.2%，差异显著（p<0.001）。
@@ -488,7 +417,7 @@ python3 /.scripts/generate_image_doubao.py "创建学术论文 Graphical Abstrac
 
 ```
 第 1 步：读取 PDF
-  （使用 PyPDF2 模板）
+  （使用 pypdf 模板：`from pypdf import PdfReader`）
 
 第 2 步：理解机制
   （分析文献内容，提取关键机制）
@@ -629,8 +558,8 @@ export VOLC_API_KEY="ea93c19e-fb46-461d-886c-eaf6cf971186"
 ### 必需的 Python 包
 
 ```bash
-# 数据处理和绘图
-pip3 install pandas matplotlib seaborn scipy PyPDF2
+# 数据处理和绘图（与项目 requirements.txt / 内置 skills 一致即可）
+pip3 install pandas matplotlib seaborn numpy plotly statsmodels scipy pypdf
 
 # 图像下载（已包含在基础库中）
 pip3 install requests
@@ -654,7 +583,7 @@ pip3 install requests
 
 ---
 
-**文件用途**：此 AGENTS.md 提供了完整的医学科研辅助能力，包括文件读取、数据可视化（Matplotlib）和概念插图生成（豆包 Seedream-4.0）。
+**文件用途**：此 AGENTS.md 提供医学科研辅助能力，包括文件读取、**数据可视化（以内置 matplotlib/seaborn 等 Skills 为主）**和概念插图生成（豆包 Seedream）。
 
 **适用模型**：火山引擎豆包（推荐）或其他支持工具调用的模型
 
@@ -671,6 +600,6 @@ pip3 install requests
    - 视觉风格
    - 细节要求
 3. **代码格式**：
-   - 数据可视化（Matplotlib）：使用 `python3 -c` 单行格式，用分号（`;`）连接
-   - 图像生成（豆包 Seedream）：使用 `python3 -c` 单行格式，用分号（`;`）连接
-4. **依赖安装**：需要安装 `requests`、`pandas`、`matplotlib`、`seaborn`、`scipy`、`PyPDF2` 库
+   - **数据可视化**：以内置 **Skills**（`matplotlib`、`seaborn` 等）中的写法为准；**短**逻辑可用 `python3 -c`，**长**逻辑须用独立 Python 文件（见规则一），**禁止**为凑单行而堆砌超长 `python3 -c`
+   - **图像生成（豆包 Seedream）**：须使用预置脚本 `/.scripts/generate_image_doubao.py`（见第三部分），**禁止**手写豆包生图脚本
+4. **依赖安装**：镜像以项目 `requirements.txt` 为准；常见包括 `requests`、`pandas`、`matplotlib`、`seaborn`、`numpy`、`plotly`、`statsmodels`、`pypdf` 等

@@ -1,0 +1,13 @@
+% pandoc injected header for XeLaTeX: enable Chinese/Japanese/Korean glyph rendering
+% Keep it lightweight to avoid impacting Latin font selection.
+
+\usepackage{xeCJK}
+
+% Font names should match installed fonts in the container (fonts-wqy-zenhei / fonts-noto-cjk).
+% Fallback order: WenQuanYi Zen Hei -> Noto Sans CJK SC.
+\IfFontExistsTF{WenQuanYi Zen Hei}{
+  \setCJKmainfont{WenQuanYi Zen Hei}
+}{
+  \setCJKmainfont{Noto Sans CJK SC}
+}
+

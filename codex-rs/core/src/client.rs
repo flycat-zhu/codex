@@ -48,7 +48,6 @@ use codex_api::ResponseCreateWsRequest;
 use codex_api::ResponsesApiRequest;
 use codex_api::ResponsesClient as ApiResponsesClient;
 use codex_api::ResponsesOptions as ApiResponsesOptions;
-use codex_protocol::models::{ResponseItem, FunctionCallOutputBody, function_call_output_content_items_to_text};
 use codex_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
 use codex_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
 use codex_api::SseTelemetry;
@@ -61,6 +60,9 @@ use codex_api::create_text_param_for_request;
 use codex_api::error::ApiError;
 use codex_api::requests::responses::Compression;
 use codex_otel::OtelManager;
+use codex_protocol::models::FunctionCallOutputBody;
+use codex_protocol::models::ResponseItem;
+use codex_protocol::models::function_call_output_content_items_to_text;
 
 use codex_protocol::ThreadId;
 use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
@@ -553,7 +555,9 @@ impl ModelClientSession {
         let reasoning = if model_info.supports_reasoning_summaries {
             Some(Reasoning {
                 effort: effort.or(default_reasoning_effort),
-                summary: if summary == ReasoningSummaryConfig::None || !self.client.state.provider.is_openai() {
+                summary: if summary == ReasoningSummaryConfig::None
+                    || !self.client.state.provider.is_openai()
+                {
                     None
                 } else {
                     Some(summary)
