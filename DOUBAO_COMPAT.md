@@ -149,6 +149,21 @@
   1. Codex：`8a7d2f44 fix(doubao): filter out phase field from assistant message for volcengine provider`
 - **状态**：✅ 已修复，包含在`codex:5.1`及后续版本镜像中
 
+### 问题 11：文件分析+生成配图场景报错 `Mismatch type string with value array`
+- **错误信息**：`{"error":{"code":"InvalidParameter","message":"The parameter `input` specified in the request are not valid: `Mismatch type string with value array`"}`
+- **根因**：
+  1. Codex内部协议中Message类型item的`content`字段为`Vec<ContentItem>`数组格式，支持同时包含文本和图片内容
+  2. 豆包Responses API不支持`content`字段为数组格式，仅接受纯文本字符串作为`content`值
+  3. 当用户上传文件进行分析并要求生成配图时，对话历史中会出现包含图片的Message item，发送给豆包时触发类型校验失败
+- **修复方案**：
+  1. 在Codex`build_responses_request()`方法中新增豆包兼容性逻辑
+  2. 当provider为豆包时，自动将所有Message类型item的`content`数组转换为纯文本格式：文本内容直接拼接，图片内容转换为markdown图片链接格式
+  3. 替换原`content`数组为仅包含单个文本项的数组，兼容豆包API要求
+  4. 不影响OpenAI等其他provider的原有行为，内部逻辑依然保留完整的ContentItems数组结构
+- **修复提交**：
+  1. Codex：`[待填充] fix(doubao): convert message content array to plain text for volcengine provider`
+- **状态**：✅ 已修复，当前分支包含修复代码
+
 ---
 
 ## 🎯 验证结果（2026-03-23）

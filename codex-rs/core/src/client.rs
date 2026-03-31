@@ -543,9 +543,32 @@ impl ModelClientSession {
                         }
                     }
                 }
-                ResponseItem::Message { role, phase, .. } if role == "assistant" => {
+                ResponseItem::Message { role, phase, content, .. } => {
                     // 豆包API不支持assistant message中的phase字段，过滤掉该内部字段
-                    *phase = None;
+                    if role == "assistant" {
+                        *phase = None;
+                    }
+                    // 豆包API不支持message content为数组格式，统一转换为纯文本
+                    let mut text_content = String::new();
+                    for content_item in content.iter() {
+                        match content_item {
+                            codex_protocol::models::ContentItem::InputText { text } => {
+                                text_content.push_str(text);
+                                text_content.push('\n');
+                            }
+                            codex_protocol::models::ContentItem::InputImage { image_url } => {
+                                text_content.push_str(&format!("![image: {}\n", image_url));
+                            }
+                            codex_protocol::models::ContentItem::OutputText { text } => {
+                                text_content.push_str(text);
+                                text_content.push('\n');
+                            }
+                        }
+                    }
+                    // 替换content数组为单个文本项
+                    *content = vec![codex_protocol::models::ContentItem::InputText {
+                        text: text_content.trim_end().to_string(),
+                    }];
                 }
                 _ => {}
             });
