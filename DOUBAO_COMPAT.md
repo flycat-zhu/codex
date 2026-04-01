@@ -91,6 +91,14 @@
 - **根因**：`doubao-seed-2-0-pro-260215` 是推理模型，需要正确的 ModelInfo（`supports_reasoning_summaries=true`，`parallel_tool_calls` 等）
 - **当前检查结果**：`config.toml` 中已配置 `model_provider = "volcengine"` 和正确的模型 slug，但未配置任何 ModelInfo 字段，会导致使用默认值：
   - `supports_tool_choice = true`（默认值，而豆包实际不支持该字段，会导致请求报错）
+
+### 问题 7：生成图片时请求参数类型不匹配（已修复）
+- **根因**：
+  1. 图片内容项转换为文本时Markdown格式错误，缺少闭合括号，导致序列化异常
+  2. 工具调用输出转换为文本失败时，会保留ContentItems数组格式，豆包不支持数组类型的content字段
+- **修复方案**：
+  1. 修正图片Markdown格式为`![image](url)`
+  2. 强制所有工具调用输出的ContentItems数组转换为Text类型，即使转换失败也返回默认文本，避免数组类型发送给豆包
   - `supports_reasoning_summaries` 未配置（默认值为 false，会导致推理字段不发送）
   - `supports_parallel_tool_calls` 未配置（默认值为 false，需要确认豆包是否支持）
 - **修复方案**：在 `config.toml` 中补充豆包模型专属的 ModelInfo 配置，或通过 Codex 的 models.json 注入正确的 ModelInfo
@@ -163,6 +171,20 @@
 - **修复提交**：
   1. Codex：`[待填充] fix(doubao): convert message content array to plain text for volcengine provider`
 - **状态**：✅ 已修复，当前分支包含修复代码
+
+### 问题 12：新建会话第一轮直接生成图片报错 `Mismatch type string with value array`
+
+- **错误信息**：`{"error":{"code":"InvalidParameter","message":"The parameter `input` specified in the request are not valid: `Mismatch type string with value array \"at index 82: mismatched type with value\\n\\n\\tqsdn6\\\"`"}}`
+- **触发场景**：新建会话后第一轮对话直接要求生成图片，没有历史对话上下文
+- **根因**：
+  1. 图片内容转换为文本时Markdown格式错误：原逻辑生成`![image: /work/xxx.png\n`，缺少闭合括号，导致序列化时出现异常格式
+  2. 工具调用输出转换逻辑容错不足：如果`function_call_output_content_items_to_text`返回`None`，会保留`ContentItems`数组格式，豆包不支持数组类型的content字段
+- **修复方案**：
+  1. 修正图片Markdown格式为标准格式：`![image](/work/xxx.png)`
+  2. 优化工具调用输出转换逻辑：即使转换失败也返回默认文本"工具执行结果无法转换为文本"，确保始终为Text类型，避免数组类型发送给豆包
+- **修复提交**：
+  1. Codex：`fix(doubao): correct image markdown format and add fallback for content items conversion`
+- **状态**：✅ 已修复（2026-04-01 完成代码修改）
 
 ---
 

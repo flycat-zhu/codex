@@ -531,16 +531,16 @@ impl ModelClientSession {
             input.iter_mut().for_each(|item| match item {
                 ResponseItem::FunctionCallOutput { output, .. } => {
                     if let FunctionCallOutputBody::ContentItems(items) = &output.body {
-                        if let Some(text) = function_call_output_content_items_to_text(items) {
-                            output.body = FunctionCallOutputBody::Text(text);
-                        }
+                        let text = function_call_output_content_items_to_text(items)
+                            .unwrap_or_else(|| "工具执行结果无法转换为文本".to_string());
+                        output.body = FunctionCallOutputBody::Text(text);
                     }
                 }
                 ResponseItem::CustomToolCallOutput { output, .. } => {
                     if let FunctionCallOutputBody::ContentItems(items) = &output.body {
-                        if let Some(text) = function_call_output_content_items_to_text(items) {
-                            output.body = FunctionCallOutputBody::Text(text);
-                        }
+                        let text = function_call_output_content_items_to_text(items)
+                            .unwrap_or_else(|| "工具执行结果无法转换为文本".to_string());
+                        output.body = FunctionCallOutputBody::Text(text);
                     }
                 }
                 ResponseItem::Message { role, phase, content, .. } => {
@@ -548,7 +548,7 @@ impl ModelClientSession {
                     if role == "assistant" {
                         *phase = None;
                     }
-                    // 豆包API不支持message content为数组格式，统一转换为纯文本
+                    // 豆包API不支持message content为数组格式，统一转换为纯文本字符串
                     let mut text_content = String::new();
                     for content_item in content.iter() {
                         match content_item {
@@ -557,7 +557,7 @@ impl ModelClientSession {
                                 text_content.push('\n');
                             }
                             codex_protocol::models::ContentItem::InputImage { image_url } => {
-                                text_content.push_str(&format!("![image: {}\n", image_url));
+                                text_content.push_str(&format!("![image]({})\n", image_url));
                             }
                             codex_protocol::models::ContentItem::OutputText { text } => {
                                 text_content.push_str(text);
@@ -565,7 +565,7 @@ impl ModelClientSession {
                             }
                         }
                     }
-                    // 替换content数组为单个文本项
+                    // 直接替换为字符串内容（豆包不支持数组格式）
                     *content = vec![codex_protocol::models::ContentItem::InputText {
                         text: text_content.trim_end().to_string(),
                     }];
