@@ -60,7 +60,9 @@ use codex_api::create_text_param_for_request;
 use codex_api::error::ApiError;
 use codex_api::requests::responses::Compression;
 use codex_otel::OtelManager;
+use codex_protocol::models::ContentItem;
 use codex_protocol::models::FunctionCallOutputBody;
+use codex_protocol::models::FunctionCallOutputContentItem;
 use codex_protocol::models::ResponseItem;
 use codex_protocol::models::function_call_output_content_items_to_text;
 
@@ -525,19 +527,23 @@ impl ModelClientSession {
     ) -> Result<ResponsesApiRequest> {
         let instructions = &prompt.base_instructions.text;
         let mut input = prompt.get_formatted_input();
-        // Volcengine/Doubao does not support ContentItems array for function call outputs,
-        // convert all content items to plain text for compatibility
+        // Volcengine/Doubao compatibility: keep multimodal image content intact, but
+        // collapse text-only content arrays for older string-only paths.
         if provider.base_url.contains("volces.com") {
             input.iter_mut().for_each(|item| match item {
                 ResponseItem::FunctionCallOutput { output, .. } => {
-                    if let FunctionCallOutputBody::ContentItems(items) = &output.body {
+                    if let FunctionCallOutputBody::ContentItems(items) = &output.body
+                        && !function_output_contains_image(items)
+                    {
                         let text = function_call_output_content_items_to_text(items)
                             .unwrap_or_else(|| "工具执行结果无法转换为文本".to_string());
                         output.body = FunctionCallOutputBody::Text(text);
                     }
                 }
                 ResponseItem::CustomToolCallOutput { output, .. } => {
-                    if let FunctionCallOutputBody::ContentItems(items) = &output.body {
+                    if let FunctionCallOutputBody::ContentItems(items) = &output.body
+                        && !function_output_contains_image(items)
+                    {
                         let text = function_call_output_content_items_to_text(items)
                             .unwrap_or_else(|| "工具执行结果无法转换为文本".to_string());
                         output.body = FunctionCallOutputBody::Text(text);
@@ -548,25 +554,28 @@ impl ModelClientSession {
                     if role == "assistant" {
                         *phase = None;
                     }
+                    if message_contains_image(content) {
+                        return;
+                    }
                     // 豆包API不支持message content为数组格式，统一转换为纯文本字符串
                     let mut text_content = String::new();
                     for content_item in content.iter() {
                         match content_item {
-                            codex_protocol::models::ContentItem::InputText { text } => {
+                            ContentItem::InputText { text } => {
                                 text_content.push_str(text);
                                 text_content.push('\n');
                             }
-                            codex_protocol::models::ContentItem::InputImage { image_url } => {
+                            ContentItem::InputImage { image_url } => {
                                 text_content.push_str(&format!("![image]({})\n", image_url));
                             }
-                            codex_protocol::models::ContentItem::OutputText { text } => {
+                            ContentItem::OutputText { text } => {
                                 text_content.push_str(text);
                                 text_content.push('\n');
                             }
                         }
                     }
                     // 直接替换为字符串内容（豆包不支持数组格式）
-                    *content = vec![codex_protocol::models::ContentItem::InputText {
+                    *content = vec![ContentItem::InputText {
                         text: text_content.trim_end().to_string(),
                     }];
                 }
@@ -1355,6 +1364,18 @@ impl WebsocketTelemetry for ApiTelemetry {
     ) {
         self.otel_manager.record_websocket_event(result, duration);
     }
+}
+
+fn function_output_contains_image(items: &[FunctionCallOutputContentItem]) -> bool {
+    items
+        .iter()
+        .any(|item| matches!(item, FunctionCallOutputContentItem::InputImage { .. }))
+}
+
+fn message_contains_image(items: &[ContentItem]) -> bool {
+    items
+        .iter()
+        .any(|item| matches!(item, ContentItem::InputImage { .. }))
 }
 
 #[cfg(test)]
